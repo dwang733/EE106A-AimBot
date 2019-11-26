@@ -1,0 +1,9 @@
+<launch>
+	<remap from="/left/image_raw" to="/cameras/head_camera/image" />
+	<remap from="/left/camera_info" to="/cameras/head_camera/camera_info" />
+	<remap from="/right/image_raw" to="/cameras/left_hand_camera/image" />
+	<remap from="/right/camera_info" to="/cameras/left_hand_camera/camera_info" />
+	<node name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc">
+		<param name="~approximate_sync" value="True" />
+	</node>
+</launch>
