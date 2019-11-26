@@ -14,26 +14,23 @@ def callback(msg):
         # img = img[:, 200:1080, :]
         img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-        # img_gray = cv.Canny(img_gray, 100, 200)
-        # cv.imshow('edges', img_gray)
-        # cv.waitKey(1)
-
-        # Threshold on light blue
         img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        # Threshold on light blue
         lower_thresh = (78,30,54)
         upper_thresh = (108,255,255)
+        # Threshold on yellow
+        # lower_thresh = (15,60,80)
+        # upper_thresh = (42,255,255)
         mask = cv.inRange(img_hsv, lower_thresh, upper_thresh)
         img_gray = cv.bitwise_and(img_gray, img_gray, mask=mask)
         img_gray = cv.medianBlur(img_gray, 13)
         cv.imshow('thresholding', img_gray)
         cv.waitKey(1)
 
-        # img_gray = cv.Canny(img_gray, 100, 200)
-        # cv.imshow('edges', img_gray)
-        # cv.waitKey(1)
-
         all_circles = cv.HoughCircles(img_gray, cv.HOUGH_GRADIENT, 2, 0.1,
                             param1=50, param2=100, minRadius=15, maxRadius=100)
+        # all_circles = cv.HoughCircles(img_gray, cv.HOUGH_GRADIENT, 4, 0.1,
+        #                     param1=50, param2=100, minRadius=5, maxRadius=50)
         circle = all_circles[0, 0, :]
         circle = np.uint16(np.around(circle))
         # draw the outer circle
