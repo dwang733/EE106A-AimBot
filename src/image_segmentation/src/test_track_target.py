@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 
-# from __future__ import division
+from __future__ import division
+import rospy
 import sys
 import cv2 as cv
 import numpy as np
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
 
 # Threshold on light blue
-LOWER_THRESH = (78,50,50)
-UPPER_THRESH = (108,255,120)
+# LOWER_THRESH = (78,50,50)
+# UPPER_THRESH = (108,255,120)
+# Threshold on yellow
+LOWER_THRESH = (15,70,90)
+UPPER_THRESH = (30,255,255)
 CAMERA_HEIGHT = 800
 CAMERA_WIDTH = 1280
 
@@ -42,47 +48,52 @@ def grab_contours(cnts):
     # return the actual contours array
     return cnts
 
-def detect_target_circle(img):
-    # img = bridge.imgmsg_to_cv2(msg, "passthrough")
-    # img = img[:, 200:1080, :]
-    img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+def detect_target_circle(msg):
+    bridge = CvBridge()
+    try:
+        img = bridge.imgmsg_to_cv2(msg, "passthrough")
+        img = img[:, 200:1080, :]
+        # img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-    img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-    # Threshold on yellow
-    # LOWER_THRESH = (15,60,80)
-    # UPPER_THRESH = (42,255,255)
-    mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
-    img_gray = cv.bitwise_and(img_gray, img_gray, mask=mask)
-    img_gray = cv.medianBlur(img_gray, 9)
-    # cv.imshow('thresholding', mask)
-    # cv.waitKey(0)
+        img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
+        mask = cv.medianBlur(mask, 9)
+        # img_gray = cv.bitwise_and(img_gray, img_gray, mask=mask)
+        # img_gray = cv.medianBlur(img_gray, 9)
+        cv.imshow('thresholding', mask)
+        cv.waitKey(1)
 
-    cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
-        cv.CHAIN_APPROX_SIMPLE)
-    cnts = grab_contours(cnts)
-    center = None
+        cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
+            cv.CHAIN_APPROX_SIMPLE)
+        cnts = grab_contours(cnts)
+        # cv.drawContours(img, cnts, -1, (0,255,0), 3)
+        # cv.imshow('contours', img)
+        # cv.waitKey(1)
+        center = None
 
-    # only proceed if at least one contour was found
-    if len(cnts) > 0:
-        # find the largest contour in the mask, then use
-        # it to compute the minimum enclosing circle and
-        # centroid
-        c = max(cnts, key=cv.contourArea)
-        ((x, y), radius) = cv.minEnclosingCircle(c)
-        M = cv.moments(c)
-        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+        # only proceed if at least one contour was found
+        if len(cnts) > 0:
+            # find the largest contour in the mask, then use
+            # it to compute the minimum enclosing circle and
+            # centroid
+            c = max(cnts, key=cv.contourArea)
+            ((x, y), radius) = cv.minEnclosingCircle(c)
+            M = cv.moments(c)
+            center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
-        # only proceed if the radius meets a minimum size
-        if radius > 10:
-            # draw the circle and centroid on the frame,
-            # then update the list of tracked points
-            cv.circle(img, (int(x), int(y)), int(radius),
-                (0, 255, 255), 2)
-            cv.circle(img, center, 5, (0, 0, 255), -1)
-            # cv.imshow('circle', img)
-            # cv.waitKey(0)
-            print((x, y, radius))
-            return (x, y, radius)
+            # only proceed if the radius meets a minimum size
+            if radius > 5:
+                # draw the circle and centroid on the frame,
+                # then update the list of tracked points
+                cv.circle(img, (int(x), int(y)), int(radius),
+                    (0, 255, 255), 2)
+                cv.circle(img, center, 5, (0, 0, 255), -1)
+                cv.imshow('circle', img)
+                cv.waitKey(1)
+                print((x, y, radius))
+                return (x, y, radius)
+    except CvBridgeError, e:
+        rospy.logerr("CvBridge Error: {0}".format(e))
 
 
 def calc_target_position(circle):
@@ -121,8 +132,14 @@ def callback(msg):
 
 
 def main():
-    msg = cv.imread('../img/archytas_left_camera_3.png')
-    callback(msg)
+    # msg = cv.imread('../img/archytas_left_camera_3.png')
+    # callback(msg)
+
+    rospy.init_node('camera_sub', anonymous=True)
+    rospy.Subscriber('/cameras/left_hand_camera/image', Image, callback)
+    # rospy.Subscriber('/io/internal_camera/head_camera/image_raw', Image, callback)
+    rospy.spin()
+
 
 if __name__ == '__main__':
     main()
