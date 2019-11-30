@@ -90,15 +90,13 @@ def detect_target_circle(img):
             return (x, y, radius)
 
 
-def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH, left_hand_camera_trans):
+def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
     circle_x, circle_y, circle_radius = circle
     rospy.loginfo('radius: %f', circle_radius)
 
     circle_frac = circle_radius * 2 / CAMERA_HEIGHT
-    # rospy.loginfo(circle_frac)
     image_height = CIRCLE_DIAMETER / circle_frac  # height in meters
     print("image_height: {}".format(image_height))
-    # rospy.loginfo(image_height)
     relative_depth = image_height * TARGET_FULL_DIST / TARGET_DIAMETER
     print("relative_depth: {}".format(relative_depth))
 
@@ -119,20 +117,19 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH, left_hand_camera_t
     print("relative_x_pos: {}".format(relative_x_pos))
     print("-------------")
 
-    br = tf2_ros.TransformBroadcaster()
-    t = TransformStamped()
-    t.header.stamp = rospy.Time.now()
-    t.header.frame_id = "left_hand_camera_axis"
-    t.child_frame_id = "target"
-    t.transform.translation.x = relative_y_pos
-    t.transform.translation.y = -relative_x_pos
-    t.transform.translation.z = relative_depth
-    t.transform.rotation.w = 1
-    br.sendTransform(t)
+    # br = tf2_ros.TransformBroadcaster()
+    # t = TransformStamped()
+    # t.header.stamp = rospy.Time.now()
+    # t.header.frame_id = "left_hand_camera_axis"
+    # t.child_frame_id = "target"
+    # t.transform.translation.x = relative_y_pos
+    # t.transform.translation.y = -relative_x_pos
+    # t.transform.translation.z = relative_depth
+    # t.transform.rotation.w = 1
+    # br.sendTransform(t)
 
 
-def callback(msg, args):
-    left_hand_camera_trans = args[0]
+def callback(msg):
     try:
         bridge = CvBridge()
         img = bridge.imgmsg_to_cv2(msg, "passthrough")
@@ -141,7 +138,7 @@ def callback(msg, args):
 
         circle = detect_target_circle(img)
         if circle is not None:
-            calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH, left_hand_camera_trans)
+            calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH)
     except CvBridgeError, e:
         rospy.logerr("CvBridge Error: {0}".format(e))
 
@@ -149,22 +146,7 @@ def callback(msg, args):
 def main():
     rospy.init_node('camera_sub', anonymous=True)
 
-    tf_buffer = tf2_ros.Buffer()
-    tf_listener = tf2_ros.TransformListener(tf_buffer)
-    r = rospy.Rate(100) # 10hz
-
-    got_transform = False
-    while not got_transform:
-        try:
-            trans = tf_buffer.lookup_transform('left_hand_camera', 'base', rospy.Time())
-            left_hand_camera_trans = trans.transform.translation
-            got_transform = True
-        except Exception as e:
-            # print(e)
-            pass
-        r.sleep()
-
-    rospy.Subscriber('/cameras/left_hand_camera/image', Image, callback, callback_args=(left_hand_camera_trans,))
+    rospy.Subscriber('/cameras/left_hand_camera/image', Image, callback)
     rospy.spin()
 
 
