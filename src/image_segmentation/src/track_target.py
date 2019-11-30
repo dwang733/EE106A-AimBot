@@ -5,87 +5,155 @@ import rospy
 import sys
 import cv2 as cv
 import numpy as np
+import tf2_ros
+from geometry_msgs.msg import TransformStamped
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-# Threshold on light blue
-LOWER_THRESH = (78,30,50)
-UPPER_THRESH = (108,255,100)
+# Threshold on yellow
+LOWER_THRESH = (15,70,70)
+UPPER_THRESH = (50,255,255)
 CAMERA_HEIGHT = 800
 CAMERA_WIDTH = 1280
 
-def detect_target_circle(msg):
-    bridge = CvBridge()
+# Diameter (in m) of the circle detected by the algorithm
+CIRCLE_DIAMETER = 0.048
+# Diameter (in m) of the target
+TARGET_DIAMETER = 0.250
+# Distance (in m) from camera which causes target to be the height of the camera image
+TARGET_FULL_DIST = 0.118
+# Bridge used to convert camera image to OpenCV format
+bridge = CvBridge()
+
+
+# Copied from imutils
+def grab_contours(cnts):
+    # if the length the contours tuple returned by cv2.findContours
+    # is '2' then we are using either OpenCV v2.4, v4-beta, or
+    # v4-official
+    if len(cnts) == 2:
+        cnts = cnts[0]
+
+    # if the length of the contours tuple is '3' then we are using
+    # either OpenCV v3, v4-pre, or v4-alpha
+    elif len(cnts) == 3:
+        cnts = cnts[1]
+
+    # otherwise OpenCV has changed their cv2.findContours return
+    # signature yet again and I have no idea WTH is going on
+    else:
+        raise Exception(("Contours tuple must have length 2 or 3, "
+            "otherwise OpenCV changed their cv2.findContours return "
+            "signature yet again. Refer to OpenCV's documentation "
+            "in that case"))
+
+    # return the actual contours array
+    return cnts
+
+
+# Detects the yellow circle on the target and returns the circle's center coords and radius
+def detect_target_circle(img):
+    # Convert to HSV color format and threshold on the yellow color
+    img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
+    mask = cv.medianBlur(mask, 9)
+    cv.imshow('thresholding', mask)
+    cv.waitKey(1)
+
+    # Find all the contours in the image
+    cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
+        cv.CHAIN_APPROX_SIMPLE)
+    cnts = grab_contours(cnts)
+    # cv.drawContours(img, cnts, -1, (0,255,0), 3)
+    # cv.imshow('contours', img)
+    # cv.waitKey(1)
+
+    # only proceed if at least one contour was found
+    if len(cnts) > 0:
+        # find the largest contour in the mask, then use
+        # it to compute the minimum enclosing circle and
+        # centroid
+        c = max(cnts, key=cv.contourArea)
+        ((x, y), radius) = cv.minEnclosingCircle(c)
+        M = cv.moments(c)
+        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+        # only proceed if the radius meets a minimum size
+        if radius > 3:
+            # draw the circle and centroid on the frame,
+            # then update the list of tracked points
+            cv.circle(img, (int(x), int(y)), int(radius),
+                (0, 255, 255), 2)
+            cv.circle(img, center, 5, (0, 0, 255), -1)
+            cv.imshow('circle', img)
+            cv.waitKey(1)
+            print((x, y, radius))
+            return (x, y, radius)
+
+
+# Calculate the target's position relative to the camera and to base
+def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
+    circle_x, circle_y, circle_radius = circle
+    rospy.loginfo('radius: %f', circle_radius)
+
+    # Calculate how far target is from the camera
+    circle_frac = circle_radius * 2 / CAMERA_HEIGHT
+    image_height = CIRCLE_DIAMETER / circle_frac  # height in meters
+    print("image_height: {}".format(image_height))
+    relative_depth = image_height * TARGET_FULL_DIST / TARGET_DIAMETER
+    print("relative_depth: {}".format(relative_depth))
+
+    # Calculate how far above/below the target is relative to camera
+    circle_y_frac = circle_y / CAMERA_HEIGHT
+    print(circle_y_frac)
+    abs_y_pos = image_height * circle_y_frac
+    print(abs_y_pos)
+    relative_y_pos = abs_y_pos - image_height / 2
+    print("relative_y_pos: {}".format(relative_y_pos))
+
+    # Calculate how far left/right the target is relative to camera
+    image_width = image_height * CAMERA_WIDTH / CAMERA_HEIGHT
+    print("image_width: {}".format(image_width))
+    circle_x_frac = circle_x / CAMERA_WIDTH
+    print(circle_x_frac)
+    abs_x_pos = image_width * circle_x_frac
+    print(abs_x_pos)
+    relative_x_pos = abs_x_pos - image_width / 2
+    print("relative_x_pos: {}".format(relative_x_pos))
+    print("-------------")
+
+    # Broadcast this transform as "target" relative to the left hand camera's axis
+    br = tf2_ros.TransformBroadcaster()
+    t = TransformStamped()
+    t.header.stamp = rospy.Time.now()
+    t.header.frame_id = "left_hand_camera_axis"
+    t.child_frame_id = "target"
+    t.transform.translation.x = relative_y_pos
+    t.transform.translation.y = -relative_x_pos
+    t.transform.translation.z = relative_depth
+    t.transform.rotation.w = 1
+    br.sendTransform(t)
+
+
+def callback(msg):
     try:
         img = bridge.imgmsg_to_cv2(msg, "passthrough")
-        # img = img[:, 200:1080, :]
-        img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        # img = img[:, 200:-200, :]
+        CAMERA_HEIGHT, CAMERA_WIDTH, _ = img.shape
 
-        img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-        # Threshold on yellow
-        # LOWER_THRESH = (15,60,80)
-        # UPPER_THRESH = (42,255,255)
-        mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
-        img_gray = cv.bitwise_and(img_gray, img_gray, mask=mask)
-        img_gray = cv.medianBlur(img_gray, 5)
-        cv.imshow('thresholding', img_gray)
-        cv.waitKey(1)
-
-        all_circles = cv.HoughCircles(img_gray, cv.HOUGH_GRADIENT, 2, 0.1,
-                            param1=50, param2=100, minRadius=10, maxRadius=75)
-        # all_circles = cv.HoughCircles(img_gray, cv.HOUGH_GRADIENT, 4, 0.1,
-        #                     param1=50, param2=100, minRadius=5, maxRadius=50)
-        if all_circles is not None:
-            circle = all_circles[0, 0, :]
-            circle = np.uint16(np.around(circle))
-            # draw the outer circle
-            cv.circle(img, (circle[0], circle[1]), circle[2], (0, 255, 0), 2)
-            # draw the center of the circle
-            cv.circle(img, (circle[0], circle[1]), 2, (0, 0, 255), 3)
-
-            # for i in all_circles[0,:]:
-            #     # draw the outer circle
-            #     cv.circle(img,(i[0],i[1]),i[2],(0,255,0),2)
-            #     # draw the center of the circle
-            #     cv.circle(img_gray,(i[0],i[1]),2,(0,0,255),3)
-            cv.imshow('detected circles', img)
-            cv.waitKey(1)
-            return circle
+        circle = detect_target_circle(img)
+        if circle is not None:
+            calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH)
     except CvBridgeError, e:
         rospy.logerr("CvBridge Error: {0}".format(e))
 
 
-def calc_target_position(circle):
-    # Diameter (in m) of the circle detected by the algorithm
-    CIRCLE_DIAMETER = (0.12 + 0.145) / 2
-    # Diameter (in m) of the target
-    TARGET_DIAMETER = 0.255
-    # Distance (in m) from camera which causes target to be the height of the camera image
-    TARGET_FULL_DIST = 0.125
-
-    circle_center = circle[0:2]
-    circle_radius = circle[2]
-    # rospy.loginfo('radius: %f', circle_radius)
-
-    circle_frac = circle_radius * 2 / CAMERA_HEIGHT
-    # rospy.loginfo(circle_frac)
-    image_height = CIRCLE_DIAMETER / circle_frac  # height in meters
-    # rospy.loginfo(image_height)
-    target_x_dist = image_height * TARGET_FULL_DIST / TARGET_DIAMETER
-    rospy.loginfo("x dist: %f", target_x_dist)
-
-
-def callback(msg):
-    circle = detect_target_circle(msg)
-    if circle is not None:
-        calc_target_position(circle)
-
-
 def main():
     rospy.init_node('camera_sub', anonymous=True)
+
     rospy.Subscriber('/cameras/left_hand_camera/image', Image, callback)
-    # rospy.Subscriber('/io/internal_camera/head_camera/image_raw', Image, callback)
     rospy.spin()
+
 
 if __name__ == '__main__':
     main()
