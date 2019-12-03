@@ -10,6 +10,7 @@ from moveit_msgs.msg import OrientationConstraint
 from geometry_msgs.msg import PoseStamped
 from path_planner import PathPlanner
 from baxter_interface import Limb
+import traceback
 
 
 planner = PathPlanner("right_arm")
@@ -25,6 +26,19 @@ def calc_line(trans):
 	y_center = -0.1
 	z_center = 0.0
 
+	norm = np.sqrt((x_target - x_center)**2 + (y_target - y_center)**2 + (z_target - z_center)**2)
+
+	orien_const = OrientationConstraint()
+	orien_const.link_name = "right_gripper"
+	orien_const.header.frame_id = "base"
+	orien_const.orientation.x = (x_target - x_center)/norm
+	orien_const.orientation.y = (y_target - y_center)/norm
+	orien_const.orientation.z = (z_target - z_center)/norm
+	orien_const.absolute_x_axis_tolerance = 0.1
+	orien_const.absolute_y_axis_tolerance = 0.1
+	orien_const.absolute_z_axis_tolerance = 0.1
+	orien_const.weight = 1.0
+
 	while not rospy.is_shutdown():
 	    try:
 	        goal_1 = PoseStamped()
@@ -34,11 +48,11 @@ def calc_line(trans):
 	        goal_1.pose.position.x = x_center
 	        goal_1.pose.position.y = y_center
 	        goal_1.pose.position.z = z_center
-
-	        #Orientation as a quaternion
-	        goal_1.pose.orientation.x = x_target - x_center
-	        goal_1.pose.orientation.y = y_target - y_center
-	        goal_1.pose.orientation.z = z_target - z_center
+	        
+	        #Orientation as a quaternion (must be normalized to one)
+	        goal_1.pose.orientation.x = (x_target - x_center)/norm
+	        goal_1.pose.orientation.y = (y_target - y_center)/norm
+	        goal_1.pose.orientation.z = (z_target - z_center)/norm
 	        goal_1.pose.orientation.w = 0.0
 
 	        # Might have to edit this . . . 
@@ -52,10 +66,6 @@ def calc_line(trans):
 	        traceback.print_exc()
 	    else:
 	        break
-
-
-
-
 
 def main():
 

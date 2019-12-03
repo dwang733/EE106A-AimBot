@@ -68,6 +68,7 @@ def map_keyboard():
         print(current)
         gripper.command_position(current + offset)
         print(current + offset)
+        print(gripper.position())
         print("---------")
 
     def offset_holding(gripper, offset):
@@ -75,28 +76,45 @@ def map_keyboard():
             capability_warning(gripper, 'set_holding_force')
             return
         current = gripper.parameters()['holding_force']
+        print(current)
         gripper.set_holding_force(current + offset)
+        print(current + offset)
+        print(gripper.parameters()['holding_force'])
+        print("---------")
 
     def offset_moving(gripper, offset):
         if gripper.type() != 'electric':
             capability_warning(gripper, 'set_moving_force')
             return
         current = gripper.parameters()['moving_force']
+        print(current)
         gripper.set_moving_force(current + offset)
+        print(current + offset)
+        rospy.sleep(1)
+        print(gripper.parameters()['moving_force'])
+        print("---------")
 
     def offset_velocity(gripper, offset):
         if gripper.type() != 'electric':
             capability_warning(gripper, 'set_velocity')
             return
         current = gripper.parameters()['velocity']
+        print(current)
         gripper.set_velocity(current + offset)
+        print(current + offset)
+        print(gripper.parameters()['velocity'])
+        print("---------")
 
     def offset_dead_band(gripper, offset):
         if gripper.type() != 'electric':
             capability_warning(gripper, 'set_dead_band')
             return
         current = gripper.parameters()['dead_zone']
+        print(current)
         gripper.set_dead_band(current + offset)
+        print(current + offset)
+        print(gripper.parameters()['dead_zone'])
+        print("---------")
 
     bindings = {
     #   key: (function, args, description)

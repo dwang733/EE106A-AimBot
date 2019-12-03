@@ -25,6 +25,7 @@ TARGET_FULL_DIST = 0.118
 # Bridge used to convert camera image to OpenCV format
 bridge = CvBridge()
 
+base_camera_trans = TransformStamped()
 
 # Copied from imutils
 def grab_contours(cnts):
@@ -134,6 +135,17 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
     t.transform.rotation.w = 1
     br.sendTransform(t)
 
+"""
+    base_target_trans = TransformStamped()
+    base_target_trans.header.stamp = rospy.Time.now()
+    base_target_trans.header.frame_id = "base"
+    base_target_trans.child_frame_id = "target"
+    base_target_trans.transform.translation.x = t.transform.translation.x + base_camera_trans.transform.translation.x
+    base_target_trans.transform.translation.y = t.transform.translation.y + base_camera_trans.transform.translation.y
+    base_target_trans.transform.translation.z = t.transform.translation.z + base_camera_trans.transform.translation.z
+    base_target_trans.transform.rotation.w = 1
+    br.sendTransform(base_target_trans)
+"""
 
 def callback(msg):
     try:
@@ -152,6 +164,20 @@ def main():
     rospy.init_node('camera_sub', anonymous=True)
 
     rospy.Subscriber('/cameras/left_hand_camera/image', Image, callback)
+
+    tfBuffer = tf2_ros.Buffer()
+    tfListener = tf2_ros.TransformListener(tfBuffer)
+
+    rate = rospy.Rate(10.0)
+    while not rospy.is_shutdown():
+        try:
+            base_camera_trans = tfBuffer.lookup_transform("left_hand_camera_axis", "base", rospy.Time())
+            break
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            print(e)
+            rate.sleep()
+            continue
+
     rospy.spin()
 
 
