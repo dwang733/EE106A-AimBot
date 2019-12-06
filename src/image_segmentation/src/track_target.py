@@ -58,8 +58,8 @@ def detect_target_circle(img):
     img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
     mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
     mask = cv.medianBlur(mask, 9)
-    cv.imshow('thresholding', mask)
-    cv.waitKey(1)
+    # cv.imshow('thresholding', mask)
+    # cv.waitKey(1)
 
     # Find all the contours in the image
     cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
@@ -76,8 +76,8 @@ def detect_target_circle(img):
         # centroid
         c = max(cnts, key=cv.contourArea)
         ((x, y), radius) = cv.minEnclosingCircle(c)
-        M = cv.moments(c)
-        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+        # M = cv.moments(c)
+        # center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
         # only proceed if the radius meets a minimum size
         if radius > 3:
@@ -85,7 +85,7 @@ def detect_target_circle(img):
             # then update the list of tracked points
             cv.circle(img, (int(x), int(y)), int(radius),
                 (0, 255, 255), 2)
-            cv.circle(img, center, 5, (0, 0, 255), -1)
+            cv.circle(img, (int(x), int(y)), 5, (0, 0, 255), -1)
             cv.imshow('circle', img)
             cv.waitKey(1)
             print((x, y, radius))
@@ -126,13 +126,13 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
     # Broadcast this transform as "target" relative to the left hand camera's axis
     br = tf2_ros.TransformBroadcaster()
     t = TransformStamped()
-    t.header.stamp = rospy.Time.now()
-    t.header.frame_id = "left_hand_camera_axis"
-    t.child_frame_id = "target"
     t.transform.translation.x = relative_y_pos
     t.transform.translation.y = -relative_x_pos
     t.transform.translation.z = relative_depth
     t.transform.rotation.w = 1
+    t.header.stamp = rospy.Time.now() + rospy.Duration(337)  # Compensating for robot publishing wrong timestamps
+    t.header.frame_id = "left_hand_camera_axis"
+    t.child_frame_id = "target"
     br.sendTransform(t)
 
 """
@@ -161,22 +161,22 @@ def callback(msg):
 
 
 def main():
-    rospy.init_node('camera_sub', anonymous=True)
+    rospy.init_node('track_target')
 
     rospy.Subscriber('/cameras/left_hand_camera/image', Image, callback)
 
     tfBuffer = tf2_ros.Buffer()
     tfListener = tf2_ros.TransformListener(tfBuffer)
 
-    rate = rospy.Rate(10.0)
-    while not rospy.is_shutdown():
-        try:
-            base_camera_trans = tfBuffer.lookup_transform("left_hand_camera_axis", "base", rospy.Time())
-            break
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-            print(e)
-            rate.sleep()
-            continue
+    # rate = rospy.Rate(10.0)
+    # while not rospy.is_shutdown():
+    #     try:
+    #         base_camera_trans = tfBuffer.lookup_transform("left_hand_camera_axis", "base", rospy.Time())
+    #         break
+    #     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+    #         print(e)
+    #         rate.sleep()
+    #         continue
 
     rospy.spin()
 

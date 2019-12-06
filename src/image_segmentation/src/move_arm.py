@@ -5,6 +5,7 @@ import rospy
 import sys
 import numpy as np
 import tf2_ros
+from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import TransformStamped
 from moveit_msgs.msg import OrientationConstraint
 from geometry_msgs.msg import PoseStamped
@@ -50,10 +51,19 @@ def calc_line(trans):
 	        goal_1.pose.position.z = z_center
 	        
 	        #Orientation as a quaternion (must be normalized to one)
-	        goal_1.pose.orientation.x = (x_target - x_center)/norm
-	        goal_1.pose.orientation.y = (y_target - y_center)/norm
-	        goal_1.pose.orientation.z = (z_target - z_center)/norm
-	        goal_1.pose.orientation.w = 0.0
+	        # goal_1.pose.orientation.x = (x_target - x_center)/norm
+	        # goal_1.pose.orientation.y = (y_target - y_center)/norm
+	        # goal_1.pose.orientation.z = (z_target - z_center)/norm
+	        # goal_1.pose.orientation.w = 0.0
+	        # q = quaternion_from_euler(1.57, 0, 0)
+	        # goal_1.pose.orientation.x = q[0]
+	        # goal_1.pose.orientation.y = q[1]
+	        # goal_1.pose.orientation.z = q[2]
+	        # goal_1.pose.orientation.w = q[3]
+	        goal_1.pose.orientation.x = 0
+	        goal_1.pose.orientation.y = 0.707
+	        goal_1.pose.orientation.z = 0
+	        goal_1.pose.orientation.w = 0.707
 
 	        # Might have to edit this . . . 
 	        plan = planner.plan_to_pose(goal_1, [])
@@ -76,7 +86,7 @@ def main():
 	source_frame = "base"
 	target_frame = "target"
 
-	rate = rospy.Rate(10.0)
+	rate = rospy.Rate(1000.0)
 	while not rospy.is_shutdown():
 		try:
 			trans = tfBuffer.lookup_transform(target_frame, source_frame, rospy.Time())
