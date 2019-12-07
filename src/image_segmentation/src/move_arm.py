@@ -23,22 +23,22 @@ def calc_line(trans):
 	y_target = trans.transform.translation.y
 	z_target = trans.transform.translation.z
 
-	x_center = 0.75
-	y_center = -0.1
-	z_center = 0.0
+	x_center = 0.5
+	y_center = -0.5
+	z_center = -0.1
 
 	norm = np.sqrt((x_target - x_center)**2 + (y_target - y_center)**2 + (z_target - z_center)**2)
 
-	orien_const = OrientationConstraint()
-	orien_const.link_name = "right_gripper"
-	orien_const.header.frame_id = "base"
-	orien_const.orientation.x = (x_target - x_center)/norm
-	orien_const.orientation.y = (y_target - y_center)/norm
-	orien_const.orientation.z = (z_target - z_center)/norm
-	orien_const.absolute_x_axis_tolerance = 0.1
-	orien_const.absolute_y_axis_tolerance = 0.1
-	orien_const.absolute_z_axis_tolerance = 0.1
-	orien_const.weight = 1.0
+	# orien_const = OrientationConstraint()
+	# orien_const.link_name = "right_gripper"
+	# orien_const.header.frame_id = "base"
+	# orien_const.orientation.x = (x_target - x_center)/norm
+	# orien_const.orientation.y = (y_target - y_center)/norm
+	# orien_const.orientation.z = (z_target - z_center)/norm
+	# orien_const.absolute_x_axis_tolerance = 0.1
+	# orien_const.absolute_y_axis_tolerance = 0.1
+	# orien_const.absolute_z_axis_tolerance = 0.1
+	# orien_const.weight = 1.0
 
 	while not rospy.is_shutdown():
 	    try:
@@ -55,15 +55,11 @@ def calc_line(trans):
 	        # goal_1.pose.orientation.y = (y_target - y_center)/norm
 	        # goal_1.pose.orientation.z = (z_target - z_center)/norm
 	        # goal_1.pose.orientation.w = 0.0
-	        # q = quaternion_from_euler(1.57, 0, 0)
-	        # goal_1.pose.orientation.x = q[0]
-	        # goal_1.pose.orientation.y = q[1]
-	        # goal_1.pose.orientation.z = q[2]
-	        # goal_1.pose.orientation.w = q[3]
-	        goal_1.pose.orientation.x = 0
-	        goal_1.pose.orientation.y = 0.707
-	        goal_1.pose.orientation.z = 0
-	        goal_1.pose.orientation.w = 0.707
+	        q = quaternion_from_euler(-3.14, 0, -1.57)
+	        goal_1.pose.orientation.x = q[0]
+	        goal_1.pose.orientation.y = q[1]
+	        goal_1.pose.orientation.z = q[2]
+	        goal_1.pose.orientation.w = q[3]
 
 	        # Might have to edit this . . . 
 	        plan = planner.plan_to_pose(goal_1, [])
