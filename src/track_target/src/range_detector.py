@@ -7,13 +7,42 @@
 # or
 # (python) range-detector --filter HSV --webcam
 
+import rospy
 import cv2
 import argparse
 from operator import xor
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
 
 
-def callback(value):
+def callback(arg):
     pass
+
+
+def camera_callback(msg, args):
+    range_filter = args[0]
+    bridge = CvBridge()
+    try:
+        img = bridge.imgmsg_to_cv2(msg, "passthrough")
+        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        threshold(range_filter, img_hsv)
+    except CvBridgeError, e:
+        rospy.logerr("CvBridge Error: {0}".format(e))
+
+
+def threshold(range_filter, frame_to_thresh):
+    v1_min, v2_min, v3_min, v1_max, v2_max, v3_max = get_trackbar_values(range_filter)
+
+    thresh = cv2.inRange(frame_to_thresh, (v1_min, v2_min, v3_min), (v1_max, v2_max, v3_max))
+    thresh = cv2.medianBlur(thresh, 9)
+
+    # cv2.imshow("Original", image)
+    cv2.imshow("thresholded image", thresh)
+    # cv2.imshow("Thresh", thresh)
+    # cv2.waitKey(1)
+
+    if cv2.waitKey(1) & 0xFF is ord('q'):
+        return
 
 
 def setup_trackbars(range_filter):
@@ -71,36 +100,19 @@ def main():
             frame_to_thresh = image.copy()
         else:
             frame_to_thresh = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    else:
-        camera = cv2.VideoCapture(0)
+    # else:
+    #     camera = cv2.VideoCapture(0)
 
     setup_trackbars(range_filter)
 
-    while True:
-        if args['webcam']:
-            ret, image = camera.read()
-
-            if not ret:
-                break
-
-            if range_filter == 'RGB':
-                frame_to_thresh = image.copy()
-            else:
-                frame_to_thresh = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-        v1_min, v2_min, v3_min, v1_max, v2_max, v3_max = get_trackbar_values(range_filter)
-
-        thresh = cv2.inRange(frame_to_thresh, (v1_min, v2_min, v3_min), (v1_max, v2_max, v3_max))
-
-        if args['preview']:
-            preview = cv2.bitwise_and(image, image, mask=thresh)
-            cv2.imshow("Preview", preview)
-        else:
-            cv2.imshow("Original", image)
-            cv2.imshow("Thresh", thresh)
-
-        if cv2.waitKey(1) & 0xFF is ord('q'):
-            break
+    if args['webcam']:
+        rospy.init_node('range_detector')
+        while not rospy.is_shutdown():
+            img = rospy.wait_for_message('/cameras/left_hand_camera/image', Image)
+            camera_callback(img, (range_filter,))
+    else:
+        while True:
+            threshold(range_filter, frame_to_thresh)
 
 
 if __name__ == '__main__':
