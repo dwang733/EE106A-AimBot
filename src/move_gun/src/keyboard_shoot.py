@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Script to shoot the Nerf gun
+Script to shoot the Nerf gun based on keyboard inputs
 """
 
 import argparse

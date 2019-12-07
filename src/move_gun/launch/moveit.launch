@@ -1,0 +1,7 @@
+<launch>
+  <node name="joint_trajectory_action_server" pkg="baxter_interface" type="joint_trajectory_action_server.py" />
+
+  <include file="$(find baxter_moveit_config)/launch/move_group.launch">
+    <!-- <arg name="right_electric_gripper" value="true"/> -->
+  </include>
+</launch>

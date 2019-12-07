@@ -1,3 +1,0 @@
-far_target: (yellow)
-min: 16,80,0
-max: 42,255,255
