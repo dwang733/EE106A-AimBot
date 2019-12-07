@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import rospy
 import sys
 import numpy as np
@@ -24,32 +23,12 @@ def calc_line(trans):
 	z_target = trans.transform.translation.z
 	print("{},{},{}".format(x_target, y_target, z_target))
 
-	# x_center = 0.5
-	# y_center = -0.5
-	# z_center = -0.1
-
-	# norm = np.sqrt((x_target - x_center)**2 + (y_target - y_center)**2 + (z_target - z_center)**2)
-
-	# orien_const = OrientationConstraint()
-	# orien_const.link_name = "right_gripper"
-	# orien_const.header.frame_id = "base"
-	# orien_const.orientation.x = (x_target - x_center)/norm
-	# orien_const.orientation.y = (y_target - y_center)/norm
-	# orien_const.orientation.z = (z_target - z_center)/norm
-	# orien_const.absolute_x_axis_tolerance = 0.1
-	# orien_const.absolute_y_axis_tolerance = 0.1
-	# orien_const.absolute_z_axis_tolerance = 0.1
-	# orien_const.weight = 1.0
-
 	while not rospy.is_shutdown():
 	    try:
 	        goal_1 = PoseStamped()
 	        goal_1.header.frame_id = "base"
 	        
 	        # x, y, and z position
-	        # goal_1.pose.position.x = x_center
-	        # goal_1.pose.position.y = y_center
-	        # goal_1.pose.position.z = z_center
 	        goal_1.pose.position.x = 0.5
 	        goal_1.pose.position.y = y_target
 	        goal_1.pose.position.z = z_target
@@ -79,12 +58,13 @@ def calc_line(trans):
 def main():
 
 	rospy.init_node('move_arm')
+
+	shoot.init()
+
 	tfBuffer = tf2_ros.Buffer()
 	tfListener = tf2_ros.TransformListener(tfBuffer)
-
 	source_frame = "base"
 	target_frame = "target"
-
 	rate = rospy.Rate(1000.0)
 	while not rospy.is_shutdown():
 		try:
