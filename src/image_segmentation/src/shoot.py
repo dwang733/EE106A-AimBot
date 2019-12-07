@@ -13,6 +13,25 @@ import baxter_external_devices
 
 from baxter_interface import CHECK_VERSION
 
+def shoot():
+    gripper = baxter_interface.Gripper('right', CHECK_VERSION)
+
+    if gripper.type() != 'electric':
+        capability_warning(gripper, 'command_position')
+        return
+    gripper.command_position(70)
+    rospy.sleep(0.025)
+    gripper.close()
+    rospy.sleep(1)
+    reload()
+
+
+def reload():
+    gripper = baxter_interface.Gripper('right', CHECK_VERSION)
+    if gripper.type() != 'electric':
+        capability_warning(gripper, 'command_position')
+        return
+    gripper.command_position(70)
 
 
 def map_keyboard():
@@ -57,13 +76,15 @@ def map_keyboard():
     	if gripper.type() != 'electric':
             capability_warning(gripper, 'command_position')
             return
-        gripper.command_position(52)
+        # gripper.command_position(52)
+        gripper.command_position(60)
 
     def shoot(gripper):
     	if gripper.type() != 'electric':
             capability_warning(gripper, 'command_position')
             return
-        gripper.command_position(52)
+        # gripper.command_position(52)
+        gripper.command_position(60)
         rospy.sleep(0.025)
         gripper.close()
         rospy.sleep(1)

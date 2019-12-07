@@ -11,7 +11,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 # Threshold on yellow
-LOWER_THRESH = (15,70,70)
+LOWER_THRESH = (15,50,50)
 UPPER_THRESH = (50,255,255)
 CAMERA_HEIGHT = 800
 CAMERA_WIDTH = 1280
@@ -54,12 +54,14 @@ def grab_contours(cnts):
 
 # Detects the yellow circle on the target and returns the circle's center coords and radius
 def detect_target_circle(img):
+    # cv.imshow('camera', img)
+    # cv.waitKey(1)
     # Convert to HSV color format and threshold on the yellow color
     img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
     mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
     mask = cv.medianBlur(mask, 9)
-    # cv.imshow('thresholding', mask)
-    # cv.waitKey(1)
+    cv.imshow('thresholding', mask)
+    cv.waitKey(1)
 
     # Find all the contours in the image
     cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
