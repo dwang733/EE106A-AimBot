@@ -15,8 +15,8 @@ from cv_bridge import CvBridge, CvBridgeError
 LOWER_THRESH = (15,65,50)
 # UPPER_THRESH = (50,255,255)
 UPPER_THRESH = (70,255,200)
-CAMERA_HEIGHT = 800
-CAMERA_WIDTH = 1280
+# CAMERA_HEIGHT = 800
+# CAMERA_WIDTH = 1280
 
 # Diameter (in m) of the circle detected by the algorithm
 CIRCLE_DIAMETER = 0.048
@@ -108,7 +108,7 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
     relative_depth = image_height * TARGET_FULL_DIST / TARGET_DIAMETER
     print("relative_depth: {}".format(relative_depth))
 
-    # Calculate how far above/below the target is relative to camera
+    # # Calculate how far above/below the target is relative to camera
     circle_y_frac = circle_y / CAMERA_HEIGHT
     print(circle_y_frac)
     abs_y_pos = image_height * circle_y_frac
@@ -139,17 +139,20 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
     t.child_frame_id = "target"
     br.sendTransform(t)
 
-"""
-    base_target_trans = TransformStamped()
-    base_target_trans.header.stamp = rospy.Time.now()
-    base_target_trans.header.frame_id = "base"
-    base_target_trans.child_frame_id = "target"
-    base_target_trans.transform.translation.x = t.transform.translation.x + base_camera_trans.transform.translation.x
-    base_target_trans.transform.translation.y = t.transform.translation.y + base_camera_trans.transform.translation.y
-    base_target_trans.transform.translation.z = t.transform.translation.z + base_camera_trans.transform.translation.z
-    base_target_trans.transform.rotation.w = 1
-    br.sendTransform(base_target_trans)
-"""
+    relative_x_pos = relative_depth * (circle_x - 667.5471339020004) / 412.07883144382936
+    relative_y_pos = relative_depth * (circle_y - 426.61500902127045) / 413.0922741963357
+
+    br = tf2_ros.TransformBroadcaster()
+    t = TransformStamped()
+    t.transform.translation.x = relative_y_pos
+    t.transform.translation.y = -relative_x_pos
+    t.transform.translation.z = relative_depth
+    t.transform.rotation.w = 1
+    t.header.stamp = rospy.Time.now() + rospy.Duration(337)  # Compensating for robot publishing wrong timestamps
+    t.header.frame_id = "left_hand_camera_axis"
+    t.child_frame_id = "target_new"
+    br.sendTransform(t)
+
 
 def callback(msg):
     try:
