@@ -14,14 +14,13 @@ def init():
     rs = baxter_interface.RobotEnable(CHECK_VERSION)
     init_state = rs.state().enabled
 
-    print('INITIALIZING THE GRIPPER')
-    print(baxter_interface.Gripper('right', CHECK_VERSION))
     gripper = baxter_interface.Gripper('right', CHECK_VERSION)
     if gripper.type() != 'electric':
         capability_warning(gripper, 'command_position')
         return
     gripper.set_holding_force(100.0)
     gripper.set_velocity(100.0)
+    hold()
 
 
 def shoot():

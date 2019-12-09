@@ -34,7 +34,8 @@ def calc_line(trans):
 	        goal_1.pose.position.z = z_target
 	        
 	        # Orientation as a quaternion (must be normalized to one)
-	        q = quaternion_from_euler(-3.14, 0, -1.57)
+	        # q = quaternion_from_euler(-3.14, 0, -1.57)
+	        q = quaternion_from_euler(-3.14, 0, -1.48)
 	        goal_1.pose.orientation.x = q[0]
 	        goal_1.pose.orientation.y = q[1]
 	        goal_1.pose.orientation.z = q[2]
@@ -49,6 +50,8 @@ def calc_line(trans):
 
 	        raw_input("Press <Enter> to shoot: ")
 	        shoot.shoot()
+	        raw_input("Press <Enter> when done reloading: ")
+	        shoot.hold()
 	    except Exception as e:
 	        print e
 	        traceback.print_exc()
@@ -72,7 +75,7 @@ def main():
 			calc_line(trans)
 			print("getting target location")
 		except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-			print(e)
+			# print(e)
 			rate.sleep()
 			continue
 
