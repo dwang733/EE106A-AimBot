@@ -108,39 +108,42 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
     relative_depth = image_height * TARGET_FULL_DIST / TARGET_DIAMETER
     print("relative_depth: {}".format(relative_depth))
 
-    # # Calculate how far above/below the target is relative to camera
-    circle_y_frac = circle_y / CAMERA_HEIGHT
-    print(circle_y_frac)
-    abs_y_pos = image_height * circle_y_frac
-    print(abs_y_pos)
-    relative_y_pos = abs_y_pos - image_height / 2
-    print("relative_y_pos: {}".format(relative_y_pos))
+    # Calculate how far above/below the target is relative to camera
+    # circle_y_frac = circle_y / CAMERA_HEIGHT
+    # print(circle_y_frac)
+    # abs_y_pos = image_height * circle_y_frac
+    # print(abs_y_pos)
+    # relative_y_pos = abs_y_pos - image_height / 2
+    # print("relative_y_pos: {}".format(relative_y_pos))
 
-    # Calculate how far left/right the target is relative to camera
-    image_width = image_height * CAMERA_WIDTH / CAMERA_HEIGHT
-    print("image_width: {}".format(image_width))
-    circle_x_frac = circle_x / CAMERA_WIDTH
-    print(circle_x_frac)
-    abs_x_pos = image_width * circle_x_frac
-    print(abs_x_pos)
-    relative_x_pos = abs_x_pos - image_width / 2
-    print("relative_x_pos: {}".format(relative_x_pos))
-    print("-------------")
-
-    # Broadcast this transform as "target" relative to the left hand camera's axis
-    br = tf2_ros.TransformBroadcaster()
-    t = TransformStamped()
-    t.transform.translation.x = relative_y_pos
-    t.transform.translation.y = -relative_x_pos
-    t.transform.translation.z = relative_depth
-    t.transform.rotation.w = 1
-    t.header.stamp = rospy.Time.now() + rospy.Duration(337)  # Compensating for robot publishing wrong timestamps
-    t.header.frame_id = "left_hand_camera_axis"
-    t.child_frame_id = "target"
-    br.sendTransform(t)
+    # # Calculate how far left/right the target is relative to camera
+    # image_width = image_height * CAMERA_WIDTH / CAMERA_HEIGHT
+    # print("image_width: {}".format(image_width))
+    # circle_x_frac = circle_x / CAMERA_WIDTH
+    # print(circle_x_frac)
+    # abs_x_pos = image_width * circle_x_frac
+    # print(abs_x_pos)
+    # relative_x_pos = abs_x_pos - image_width / 2
+    # print("relative_x_pos: {}".format(relative_x_pos))
+    # print("-------------")
+    #
+    # # Broadcast this transform as "target" relative to the left hand camera's axis
+    # br = tf2_ros.TransformBroadcaster()
+    # t = TransformStamped()
+    # t.transform.translation.x = relative_y_pos
+    # t.transform.translation.y = -relative_x_pos
+    # t.transform.translation.z = relative_depth
+    # t.transform.rotation.w = 1
+    # t.header.stamp = rospy.Time.now() + rospy.Duration(337)  # Compensating for robot publishing wrong timestamps
+    # t.header.frame_id = "reference/left_hand_camera_axis"
+    # t.child_frame_id = "target"
+    # br.sendTransform(t)
 
     relative_x_pos = relative_depth * (circle_x - 667.5471339020004) / 412.07883144382936
     relative_y_pos = relative_depth * (circle_y - 426.61500902127045) / 413.0922741963357
+    print('relative_x_pos: {}'.format(relative_x_pos))
+    print('relative_y_pos: {}'.format(relative_y_pos))
+    print('--------------------------------')
 
     br = tf2_ros.TransformBroadcaster()
     t = TransformStamped()
@@ -149,7 +152,7 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
     t.transform.translation.z = relative_depth
     t.transform.rotation.w = 1
     t.header.stamp = rospy.Time.now() + rospy.Duration(337)  # Compensating for robot publishing wrong timestamps
-    t.header.frame_id = "left_hand_camera_axis"
+    t.header.frame_id = "reference/left_hand_camera_axis"
     t.child_frame_id = "target_new"
     br.sendTransform(t)
 

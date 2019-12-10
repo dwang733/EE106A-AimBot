@@ -14,13 +14,13 @@ import traceback
 import shoot
 
 planner = PathPlanner("right_arm")
-print("got path planner")
 
 def calc_line(trans):
     print("moving arm")
-    x_target = trans.transform.translation.x
-    y_target = trans.transform.translation.y
-    z_target = trans.transform.translation.z
+    # x_target = trans.transform.translation.x
+    # y_target = trans.transform.translation.y
+    # z_target = trans.transform.translation.z
+    x_target, y_target, z_target = trans
     print("{},{},{}".format(x_target, y_target, z_target))
 
     while not rospy.is_shutdown():
@@ -34,7 +34,7 @@ def calc_line(trans):
             goal_1.pose.position.z = z_target
             
             # Orientation as a quaternion (must be normalized to one)
-            q = quaternion_from_euler(3.100, 0.154, -1.428)
+            q = quaternion_from_euler(2.940, -0.340, -1.65)
             goal_1.pose.orientation.x = q[0]
             goal_1.pose.orientation.y = q[1]
             goal_1.pose.orientation.z = q[2]
@@ -59,8 +59,10 @@ def calc_line(trans):
 
 def main():
     rospy.init_node('move_arm')
+    print("init node")
 
     shoot.init()
+    print("init shoot")
 
     tfBuffer = tf2_ros.Buffer()
     tfListener = tf2_ros.TransformListener(tfBuffer)
@@ -70,9 +72,18 @@ def main():
     rate = rospy.Rate(1000.0)
     while not rospy.is_shutdown():
         try:
-            trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
-            calc_line(trans)
-            print("getting target location")
+            # trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
+            # calc_line(trans)
+
+            trans_list = []
+            for _ in range(10):
+                trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
+                trans_list.append(trans.transform.translation)
+            x = np.median([i.x for i in trans_list])
+            y = np.median([i.y for i in trans_list])
+            z = np.median([i.z for i in trans_list])
+            calc_line((x, y, z))
+            
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
             rate.sleep()
             continue
