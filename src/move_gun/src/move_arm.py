@@ -15,6 +15,7 @@ import shoot
 
 planner = PathPlanner("right_arm")
 
+
 def calc_line(trans):
     print("moving arm")
     # x_target = trans.transform.translation.x
@@ -27,18 +28,38 @@ def calc_line(trans):
         try:
             goal_1 = PoseStamped()
             goal_1.header.frame_id = "base"
-            
-            # x, y, and z position
-            goal_1.pose.position.x = 0.5
-            goal_1.pose.position.y = y_target
-            goal_1.pose.position.z = z_target
-            
-            # Orientation as a quaternion (must be normalized to one)
-            q = quaternion_from_euler(2.940, -0.340, -1.65)
-            goal_1.pose.orientation.x = q[0]
-            goal_1.pose.orientation.y = q[1]
-            goal_1.pose.orientation.z = q[2]
-            goal_1.pose.orientation.w = q[3]
+
+            if y_target < 0.25:
+                print("target in range")
+                # x, y, and z position
+                goal_1.pose.position.x = 0.5
+                goal_1.pose.position.y = y_target
+                goal_1.pose.position.z = z_target
+                
+                # Orientation as a quaternion (must be normalized to one)
+                q = quaternion_from_euler(2.940, -0.340, -1.65)
+                goal_1.pose.orientation.x = q[0]
+                goal_1.pose.orientation.y = q[1]
+                goal_1.pose.orientation.z = q[2]
+                goal_1.pose.orientation.w = q[3]
+            else:
+                print("target out of range")
+                goal_1.pose.position.x = 0.5
+                goal_1.pose.position.y = 0.15
+                # goal_1.pose.position.z = 0
+                goal_1.pose.position.z = z_target
+                
+                # Orientation as a quaternion (must be normalized to one)
+                theta_yaw = -1.65 + np.arctan((y_target - goal_1.pose.position.y) / (x_target - goal_1.pose.position.x))
+                # theta_roll = 2.940 + np.arctan((z_'target - goal_1.pose.position.z) / (x_target - goal_1.pose.position.x))
+                # if theta_roll > np.pi:
+                #     theta_roll -= 2 * np.pi
+                theta_roll = 2.940
+                q = quaternion_from_euler(theta_roll, -0.340, theta_yaw)
+                goal_1.pose.orientation.x = q[0]
+                goal_1.pose.orientation.y = q[1]
+                goal_1.pose.orientation.z = q[2]
+                goal_1.pose.orientation.w = q[3]
 
             # Might have to edit this . . . 
             plan = planner.plan_to_pose(goal_1, [])
