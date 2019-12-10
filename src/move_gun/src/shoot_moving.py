@@ -12,6 +12,7 @@ from path_planner import PathPlanner
 from baxter_interface import Limb
 import traceback
 import shoot
+from extrapolation import ExtrapolationQueue
 
 planner = PathPlanner("right_arm")
 RATE_FREQ = 1.0
@@ -74,7 +75,7 @@ def create_goal_pose(trans):
     return goal_1
 
 
-def calc_line(trans, vel):
+def calc_line(trans, vel, extra, START_TIME):
     print("moving arm")
     x_target = trans.x
     y_target = trans.y
@@ -92,10 +93,12 @@ def calc_line(trans, vel):
         print(time_to_execute)
 
         predict_trans = Vector3()
-        predict_trans.x = x_target + vel.x * time_to_execute
-        predict_trans.y = y_target + vel.y * time_to_execute
-        predict_trans.z = z_target + vel.z * time_to_execute
-        print("predict trans: {}".format(predict_trans))
+        # predict_trans.x = x_target + vel.x * time_to_execute
+        # predict_trans.y = y_target + vel.y * time_to_execute
+        # predict_trans.z = z_target + vel.z * time_to_execute
+        # print("predict trans: {}".format(predict_trans))
+        time = (rospy.Time().now() + rospy.Duration(337)).secs + TIME_OFFSET
+        predict_trans.x, predict_trans.y, predict_trans.z = extra.extrapolate(time)
 
         predict_goal = create_goal_pose(predict_trans)
         plan = planner.plan_to_pose(predict_goal, [])
@@ -132,47 +135,54 @@ def main():
     previous_time_stamp = None
     vel = None
 
+    extra = ExtrapolationQueue(5)
+
     raw_input("Press <Enter> to move the right arm: ")
     while not rospy.is_shutdown():
+        START_TIME = None
         rate = rospy.Rate(RATE_FREQ)
         for _ in range(int(2 * RATE_FREQ)):
             try:
                 trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
-                if previous_trans is None:
-                    # print("no previous trans")
-                    previous_trans = trans.transform.translation
-                    previous_time_stamp = trans.header.stamp
-                    rate.sleep()
-                    continue
+                # if previous_trans is None:
+                #     # print("no previous trans")
+                #     previous_trans = trans.transform.translation
+                #     previous_time_stamp = trans.header.stamp
+                #     rate.sleep()
+                #     continue
 
-                time_stamp = trans.header.stamp
-                trans = trans.transform.translation
+                # time_stamp = trans.header.stamp
+                # trans = trans.transform.translation
 
-                dur = (time_stamp - previous_time_stamp).to_sec()
-                print(dur)
-                current_vel = Vector3()
-                current_vel.x = (trans.x - previous_trans.x) / dur
-                current_vel.y = (trans.y - previous_trans.y) / dur
-                current_vel.z = (trans.z - previous_trans.z) / dur
-                if abs(current_vel.x) < 0.05 and abs(current_vel.y) < 0.05 and abs(current_vel.z) < 0.05:
-                    print("velocity too small")
-                    # print("velocity: {},{},{}".format(current_vel.x, current_vel.y, current_vel.z))
-                else:
-                    print("velocity: {},{},{}".format(current_vel.x, current_vel.y, current_vel.z))
+                # dur = (time_stamp - previous_time_stamp).to_sec()
+                # print(dur)
+                # current_vel = Vector3()
+                # current_vel.x = (trans.x - previous_trans.x) / dur
+                # current_vel.y = (trans.y - previous_trans.y) / dur
+                # current_vel.z = (trans.z - previous_trans.z) / dur
+                # if abs(current_vel.x) < 0.05 and abs(current_vel.y) < 0.05 and abs(current_vel.z) < 0.05:
+                #     print("velocity too small")
+                #     # print("velocity: {},{},{}".format(current_vel.x, current_vel.y, current_vel.z))
+                # else:
+                #     print("velocity: {},{},{}".format(current_vel.x, current_vel.y, current_vel.z))
 
-                previous_trans = trans
-                previous_time_stamp = time_stamp
-                if vel is None:
-                    vel = current_vel
-                else:
-                    # vel = 0.5 * vel + 0.5 * current_vel
-                    vel = current_vel
-                rate.sleep()
+                # previous_trans = trans
+                # previous_time_stamp = time_stamp
+                # if vel is None:
+                #     vel = current_vel
+                # else:
+                #     # vel = 0.5 * vel + 0.5 * current_vel
+                #     vel = current_vel
+                # rate.sleep()
+                extra.push(trans.header.stamp.secs, trans.transform.translation)
+                if START_TIME is None:
+                    START_TIME = trans.header.stamp.secs
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
                 print("got exception")
                 rate.sleep()
 
-        calc_line(trans, vel)
+        # calc_line(trans, vel)
+        calc_line(trans.transform.translation, 0, extra, START_TIME)
 
 
 if __name__ == '__main__':
