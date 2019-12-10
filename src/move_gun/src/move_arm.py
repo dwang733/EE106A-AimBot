@@ -17,67 +17,97 @@ planner = PathPlanner("right_arm")
 
 
 def calc_line(trans):
-	print("moving arm")
-	x_target = trans.transform.translation.x
-	y_target = trans.transform.translation.y
-	z_target = trans.transform.translation.z
-	print("{},{},{}".format(x_target, y_target, z_target))
+    print("moving arm")
+    # x_target = trans.transform.translation.x
+    # y_target = trans.transform.translation.y
+    # z_target = trans.transform.translation.z
+    x_target, y_target, z_target = trans
+    print("{},{},{}".format(x_target, y_target, z_target))
 
-	while not rospy.is_shutdown():
-	    try:
-	        goal_1 = PoseStamped()
-	        goal_1.header.frame_id = "base"
-	        
-	        # x, y, and z position
-	        goal_1.pose.position.x = 0.5
-	        goal_1.pose.position.y = y_target
-	        goal_1.pose.position.z = z_target
-	        
-	        # Orientation as a quaternion (must be normalized to one)
-	        # q = quaternion_from_euler(-3.14, 0, -1.57)
-	        q = quaternion_from_euler(-3.14, 0, -1.48)
-	        goal_1.pose.orientation.x = q[0]
-	        goal_1.pose.orientation.y = q[1]
-	        goal_1.pose.orientation.z = q[2]
-	        goal_1.pose.orientation.w = q[3]
+    while not rospy.is_shutdown():
+        try:
+            goal_1 = PoseStamped()
+            goal_1.header.frame_id = "base"
 
-	        # Might have to edit this . . . 
-	        plan = planner.plan_to_pose(goal_1, [])
+            if y_target < 0.25:
+                print("target in range")
+                # x, y, and z position
+                goal_1.pose.position.x = 0.5
+                goal_1.pose.position.y = y_target
+                goal_1.pose.position.z = z_target
+                
+                # Orientation as a quaternion (must be normalized to one)
+                q = quaternion_from_euler(2.940, -0.340, -1.65)
+                goal_1.pose.orientation.x = q[0]
+                goal_1.pose.orientation.y = q[1]
+                goal_1.pose.orientation.z = q[2]
+                goal_1.pose.orientation.w = q[3]
+            else:
+                print("target out of range")
+                goal_1.pose.position.x = 0.5
+                goal_1.pose.position.y = 0.15
+                # goal_1.pose.position.z = 0
+                goal_1.pose.position.z = z_target
+                
+                # Orientation as a quaternion (must be normalized to one)
+                theta_yaw = -1.65 + np.arctan((y_target - goal_1.pose.position.y) / (x_target - goal_1.pose.position.x))
+                # theta_roll = 2.940 + np.arctan((z_'target - goal_1.pose.position.z) / (x_target - goal_1.pose.position.x))
+                # if theta_roll > np.pi:
+                #     theta_roll -= 2 * np.pi
+                theta_roll = 2.940
+                q = quaternion_from_euler(theta_roll, -0.340, theta_yaw)
+                goal_1.pose.orientation.x = q[0]
+                goal_1.pose.orientation.y = q[1]
+                goal_1.pose.orientation.z = q[2]
+                goal_1.pose.orientation.w = q[3]
 
-	        raw_input("Press <Enter> to move the right arm to goal pose 1: ")
-	        if not planner.execute_plan(plan):
-	            raise Exception("Execution failed")
+            # Might have to edit this . . . 
+            plan = planner.plan_to_pose(goal_1, [])
 
-	        raw_input("Press <Enter> to shoot: ")
-	        shoot.shoot()
-	        raw_input("Press <Enter> when done reloading: ")
-	        shoot.hold()
-	    except Exception as e:
-	        print e
-	        traceback.print_exc()
-	    else:
-	        break
+            raw_input("Press <Enter> to move the right arm to goal pose 1: ")
+            if not planner.execute_plan(plan):
+                raise Exception("Execution failed")
+
+            raw_input("Press <Enter> to shoot: ")
+            shoot.shoot()
+            raw_input("Press <Enter> when done reloading: ")
+            shoot.hold()
+        except Exception as e:
+            print e
+            traceback.print_exc()
+        else:
+            break
 
 def main():
+    rospy.init_node('move_arm')
+    print("init node")
 
-	rospy.init_node('move_arm')
+    shoot.init()
+    print("init shoot")
 
-	shoot.init()
+    tfBuffer = tf2_ros.Buffer()
+    tfListener = tf2_ros.TransformListener(tfBuffer)
+    source_frame = "base"
+    # target_frame = "target"
+    target_frame = "target_new"
+    rate = rospy.Rate(1000.0)
+    while not rospy.is_shutdown():
+        try:
+            # trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
+            # calc_line(trans)
 
-	tfBuffer = tf2_ros.Buffer()
-	tfListener = tf2_ros.TransformListener(tfBuffer)
-	source_frame = "base"
-	target_frame = "target"
-	rate = rospy.Rate(1000.0)
-	while not rospy.is_shutdown():
-		try:
-			trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
-			calc_line(trans)
-			print("getting target location")
-		except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-			# print(e)
-			rate.sleep()
-			continue
+            trans_list = []
+            for _ in range(10):
+                trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
+                trans_list.append(trans.transform.translation)
+            x = np.median([i.x for i in trans_list])
+            y = np.median([i.y for i in trans_list])
+            z = np.median([i.z for i in trans_list])
+            calc_line((x, y, z))
+            
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            rate.sleep()
+            continue
 
 
 if __name__ == '__main__':

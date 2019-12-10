@@ -36,7 +36,7 @@ def threshold(range_filter, frame_to_thresh):
     thresh = cv2.inRange(frame_to_thresh, (v1_min, v2_min, v3_min), (v1_max, v2_max, v3_max))
     thresh = cv2.medianBlur(thresh, 9)
 
-    # cv2.imshow("Original", image)
+    cv2.imshow("Original", cv2.cvtColor(frame_to_thresh, cv2.COLOR_HSV2BGR))
     cv2.imshow("thresholded image", thresh)
     # cv2.imshow("Thresh", thresh)
     # cv2.waitKey(1)
