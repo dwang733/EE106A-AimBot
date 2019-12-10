@@ -1,17 +1,18 @@
 from collections import OrderedDict
 import numpy as np
+import time
 
 # Just Learning about OrderedDict and random test stuff
-a = OrderedDict()
-a[1] = (1,2,3)
-a[4] = (4,5,6)
-a[2] = (7,8,9)
-print(a.items())
-print(a.keys())
-print(list(a.values()))
-print(len(a))
-print(a.values())
-print(a.popitem(False))
+# a = OrderedDict()
+# a[1] = (1,2,3)
+# a[4] = (4,5,6)
+# a[2] = (7,8,9)
+# print(a.items())
+# print(a.keys())
+# print(list(a.values()))
+# print(len(a))
+# print(a.values())
+# print(a.popitem(False))
 # print(np.array(list(a.values())))
 # print(np.array(list(a.keys())))
 # p = np.polyfit(np.array(list(a.keys())), np.array(list(a.values())), 1)
@@ -27,11 +28,11 @@ class ExtrapolationQueue():
         """ Initializes the cache, max buffer size, and degree of interpolation """
         self.cache = OrderedDict()
         self.max_size = buff_size
-        self.size = len(cache)
+        self.len = len(self.cache)
         self.deg = deg
     def size(self):
         """ Returns the current size of the cache """
-        return self.size
+        return self.len
     def push(self, time, pos):
         """
         Pushes a new position data point to the Queue and pops out the oldest position data point
@@ -45,10 +46,10 @@ class ExtrapolationQueue():
         None
         """
         self.cache[time] = (pos.x, pos.y, pos.z)
-        self.size+=1
-        if self.size > self.max_size:
-            self.cache.pop()
-            self.size-=1
+        self.len+=1
+        if self.len > self.max_size:
+            self.pop()
+            self.len-=1
     def pop(self):
         """
         Pops off the oldest data point. Returns the oldest data point or None if cache is empty.
@@ -59,7 +60,7 @@ class ExtrapolationQueue():
         Outputs:
         data - tuple with first element the time and second element a tuple of the oldest data point that has been popped off
         """
-        if self.size > 0:
+        if self.len > 0:
             data = self.cache.popitem(False)
             return data
         else:
@@ -91,9 +92,29 @@ class ExtrapolationQueue():
         Outputs:
         data - extrapolated [x,y,z] position in 3D space. This is a regular python list.
         """
-        p = self.interpolate(self.deg)
+        p = self.interpolate(self.deg)  #this take the most time
         data = []
-        t = np.array([time**i for i in range(p.shape[0])])
+        t = np.array([time**(p.shape[0]-1-i) for i in range(p.shape[0])])
         for d in range(3):
-            data.append(np.dot(p[:,d]), t)
+            data.append(np.dot(p[:,d], t))
         return data
+
+# class Vector3():
+#     def __init__(self, x, y, z):
+#         self.x = x
+#         self.y = y
+#         self.z = z
+# e = ExtrapolationQueue(5)
+# e.push(1, Vector3(4, 4, 4))
+# e.push(3, Vector3(0, 0, 0))
+# e.push(4, Vector3(1, 1, 1))
+# e.push(10, Vector3(49, 49, 49))
+# e.push(-5, Vector3(64, 64, 64))
+# print(e.cache)
+# print(e.size())
+# e.push(-1, Vector3(16, 16, 16))
+# print(e.cache)
+# print(e.size())
+# start = time.time()
+# print(e.extrapolate(7))
+# print(time.time() - start)
