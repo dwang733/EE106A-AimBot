@@ -68,14 +68,14 @@ def calc_line(trans):
             if len(plan.joint_trajectory.points) > 0:
                 print(plan.joint_trajectory.points[-1].time_from_start.to_sec())
 
-            # raw_input("Press <Enter> to move the right arm to goal pose 1: ")
+            raw_input("Press <Enter> to move the right arm to goal pose 1: ")
             if not planner.execute_plan(plan):
                 raise Exception("Execution failed")
 
-            # raw_input("Press <Enter> to shoot: ")
-            # shoot.shoot()
-            # raw_input("Press <Enter> when done reloading: ")
-            # shoot.hold()
+            raw_input("Press <Enter> to shoot: ")
+            shoot.shoot()
+            raw_input("Press <Enter> when done reloading: ")
+            shoot.hold()
         except Exception as e:
             print e
             traceback.print_exc()
@@ -107,14 +107,15 @@ def main():
             x = np.median([i.x for i in trans_list])
             y = np.median([i.y for i in trans_list])
             z = np.median([i.z for i in trans_list])
+            calc_line((x, y, z))
 
-            if prev_pos is not None:
-                diff = np.sqrt((prev_pos[0] - x)**2 + (prev_pos[1] - y)**2 + (prev_pos[2] - z)**2)
-            if prev_pos is None or diff > 5:
-                calc_line((x, y, z))
-                prev_pos = (x, y, z)
-            print("----------------------")
-            rate.sleep()
+            # if prev_pos is not None:
+            #     diff = np.sqrt((prev_pos[0] - x)**2 + (prev_pos[1] - y)**2 + (prev_pos[2] - z)**2)
+            # if prev_pos is None or diff > 5:
+            #     calc_line((x, y, z))
+            #     prev_pos = (x, y, z)
+            # print("----------------------")
+            # rate.sleep()
             
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
             rate.sleep()

@@ -11,10 +11,10 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 # Threshold on yellow
-# LOWER_THRESH = (15,50,50)
-LOWER_THRESH = (15,55,50)
-# UPPER_THRESH = (50,255,255)
-UPPER_THRESH = (70,255,255)
+# LOWER_THRESH = (15,55,50)
+LOWER_THRESH = (15, 65, 50)
+# UPPER_THRESH = (70,255,255)
+UPPER_THRESH = (65, 255, 150)
 # CAMERA_HEIGHT = 800
 # CAMERA_WIDTH = 1280
 

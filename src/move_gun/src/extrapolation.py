@@ -30,9 +30,12 @@ class ExtrapolationQueue():
         self.max_size = buff_size
         self.len = len(self.cache)
         self.deg = deg
+        self.counter = 0
+
     def size(self):
         """ Returns the current size of the cache """
         return self.len
+
     def push(self, time, pos):
         """
         Pushes a new position data point to the Queue and pops out the oldest position data point
@@ -45,11 +48,14 @@ class ExtrapolationQueue():
         Outputs:
         None
         """
-        self.cache[time] = (pos.x, pos.y, pos.z)
-        self.len+=1
-        if self.len > self.max_size:
+        if self.len + 1 > self.max_size:
             self.pop()
             self.len-=1
+        self.cache[self.counter] = (time, pos.x, pos.y, pos.z)
+        self.counter = (self.counter + 1)%self.max_size
+        self.len+=1
+            
+
     def pop(self):
         """
         Pops off the oldest data point. Returns the oldest data point or None if cache is empty.
@@ -79,7 +85,7 @@ class ExtrapolationQueue():
             coefficients for y trajectory = p[:,1]
             coefficients for z trajectory = p[:,2]
         """
-        p = np.polyfit(np.array(list(self.cache.keys())), np.array(list(self.cache.values())), deg)
+        p = np.polyfit(np.array(list(self.cache.values()))[:,0], np.array(list(self.cache.values()))[:,1:], deg)
         return p
 
     def extrapolate(self, time):

@@ -15,7 +15,7 @@ import shoot
 from extrapolation import ExtrapolationQueue
 
 planner = PathPlanner("right_arm")
-RATE_FREQ = 1.0
+RATE_FREQ = 4.0
 TIME_OFFSET = 1.0
 
 
@@ -87,7 +87,8 @@ def calc_line(trans, vel, extra, START_TIME):
         plan = planner.plan_to_pose(goal_1, [])
         print("initial trans: {}".format(trans))
 
-        print("num points in traj: {}".format(len(plan.joint_trajectory.points)))
+        if len(plan.joint_trajectory.points) > 0:
+            print("num points in traj: {}".format(len(plan.joint_trajectory.points)))
         time_to_execute = plan.joint_trajectory.points[-1].time_from_start.to_sec()
         time_to_execute += TIME_OFFSET
         print(time_to_execute)
@@ -108,12 +109,13 @@ def calc_line(trans, vel, extra, START_TIME):
         if not planner.execute_plan(plan):
             raise Exception("Execution failed")
 
-        shoot.shoot()
-        raw_input("Press <Enter> when done reloading: ")
-        shoot.hold()
+        print("shooting!")
+        # shoot.shoot()
+        # raw_input("Press <Enter> when done reloading: ")
+        # shoot.hold()
 
         print("Program done!")
-        exit(0)
+        # exit(0)
     except Exception as e:
         print(e)
         traceback.print_exc()
@@ -135,13 +137,13 @@ def main():
     previous_time_stamp = None
     vel = None
 
-    extra = ExtrapolationQueue(5)
+    extra = ExtrapolationQueue(8)
 
     raw_input("Press <Enter> to move the right arm: ")
     while not rospy.is_shutdown():
         START_TIME = None
         rate = rospy.Rate(RATE_FREQ)
-        for _ in range(int(2 * RATE_FREQ)):
+        for _ in range(int(1 * RATE_FREQ)):
             try:
                 trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
                 # if previous_trans is None:
@@ -174,9 +176,12 @@ def main():
                 #     # vel = 0.5 * vel + 0.5 * current_vel
                 #     vel = current_vel
                 # rate.sleep()
+
+                print(extra.cache)
                 extra.push(trans.header.stamp.secs, trans.transform.translation)
                 if START_TIME is None:
                     START_TIME = trans.header.stamp.secs
+                rate.sleep()
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
                 print("got exception")
                 rate.sleep()
