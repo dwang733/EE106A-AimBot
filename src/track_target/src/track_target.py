@@ -9,14 +9,18 @@ import tf2_ros
 from geometry_msgs.msg import TransformStamped
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+from watershed import TargetFinder
 
 # Threshold on yellow
-# LOWER_THRESH = (15,50,50)
-LOWER_THRESH = (15,55,50)
-# UPPER_THRESH = (50,255,255)
-UPPER_THRESH = (70,255,255)
+# LOWER_THRESH = (15, 65, 50)
+# UPPER_THRESH = (65, 255, 150)
+# LOWER_THRESH = (15,55,50)
+# UPPER_THRESH = (70,255,100)
+LOWER_THRESH = (15,75,60)
+UPPER_THRESH = (70,255,200)
 # CAMERA_HEIGHT = 800
 # CAMERA_WIDTH = 1280
+target_finder = TargetFinder(LOWER_THRESH, UPPER_THRESH)
 
 # Diameter (in m) of the circle detected by the algorithm
 CIRCLE_DIAMETER = 0.048
@@ -74,26 +78,72 @@ def detect_target_circle(img):
     # cv.waitKey(1)
 
     # only proceed if at least one contour was found
-    if len(cnts) > 0:
-        # find the largest contour in the mask, then use
-        # it to compute the minimum enclosing circle and
-        # centroid
-        c = max(cnts, key=cv.contourArea)
-        ((x, y), radius) = cv.minEnclosingCircle(c)
-        # M = cv.moments(c)
-        # center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+    if len(cnts) == 0:
+        return
 
-        # only proceed if the radius meets a minimum size
-        if radius > 3:
-            # draw the circle and centroid on the frame,
-            # then update the list of tracked points
-            cv.circle(img, (int(x), int(y)), int(radius),
-                (0, 255, 255), 2)
-            cv.circle(img, (int(x), int(y)), 5, (0, 0, 255), -1)
-            cv.imshow('circle', img)
-            cv.waitKey(1)
-            print((x, y, radius))
-            return (x, y, radius)
+    # # find the largest contour in the mask, then use
+    # # it to compute the minimum enclosing circle and
+    # # centroid
+    c = max(cnts, key=cv.contourArea)
+    ((x, y), radius) = cv.minEnclosingCircle(c)
+    # M = cv.moments(c)
+    # center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+    # only proceed if the radius meets a minimum size
+    if radius > 3:
+        # draw the circle and centroid on the frame,
+        # then update the list of tracked points
+        cv.circle(img, (int(x), int(y)), int(radius),
+            (0, 255, 255), 2)
+        cv.circle(img, (int(x), int(y)), 5, (0, 0, 255), -1)
+        cv.imshow('contour method', img)
+        cv.waitKey(1)
+        print((x, y, radius))
+        return (x, y, radius)
+
+    # cnts.sort(key=cv.contourArea, reverse=True)
+    # target_circle = None
+    # target_circle_radius = 0
+    # target_eccentricity = 0
+    # for c in cnts[:2]:
+    #     try:
+    #         ellipse = cv.fitEllipse(c)
+    #         (center, axes, orientation) = ellipse
+    #         major_axis = max(axes)
+    #         minor_axis = min(axes)
+    #         eccentricity = np.sqrt(1 - (minor_axis / major_axis) ** 2)
+    #         # cv.ellipse(img, ellipse, (0, 0, 255), 2)
+    #         # print(eccentricity)
+
+    #         if eccentricity > 0.7:
+    #             print(eccentricity)
+    #             # cv.ellipse(img, ellipse, (0, 0, 255), 2)
+    #             axis_avg = (major_axis + minor_axis) / 2
+    #             if target_circle is None or eccentricity > target_eccentricity:
+    #                 target_circle_radius = axis_avg
+    #                 target_circle = (center[0], center[1], target_circle_radius)
+    #                 target_eccentricity = eccentricity
+
+    #         # # only proceed if the radius meets a minimum size
+    #         # if radius > 3:
+    #         #     # draw the circle and centroid on the frame,
+    #         #     # then update the list of tracked points
+    #         #     cv.circle(img, (int(x), int(y)), int(radius),
+    #         #         (0, 255, 255), 2)
+    #         #     cv.circle(img, (int(x), int(y)), 5, (0, 0, 255), -1)
+    #         #     cv.imshow('circle', img)
+    #         #     cv.waitKey(1)
+    #         #     print((x, y, radius))
+    #         #     return (x, y, radius)
+    #     except Exception:
+    #         pass
+
+    # print("-------------------------")
+    # if target_circle is not None:
+    #     cv.circle(img, (int(target_circle[0]), int(target_circle[1])), int(target_circle[2]), (0, 255, 255), 2)
+    #     cv.circle(img, (int(target_circle[0]), int(target_circle[1])), 5, (0, 0, 255), -1)
+    #     print(target_circle)
+    # cv.imshow('ellipses', img)
 
 
 # Calculate the target's position relative to the camera and to base
@@ -159,11 +209,12 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
 
 def callback(msg):
     try:
-        img = bridge.imgmsg_to_cv2(msg, "passthrough")
+        img = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         # img = img[:, 200:-200, :]
         CAMERA_HEIGHT, CAMERA_WIDTH, _ = img.shape
 
         circle = detect_target_circle(img)
+        # circle = target_finder.detect_target_circle(img)
         if circle is not None:
             calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH)
     except CvBridgeError, e:
