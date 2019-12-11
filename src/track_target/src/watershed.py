@@ -28,6 +28,8 @@ class TargetFinder:
         img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         mask = cv.inRange(img_hsv, self.low_thresh, self.high_thresh)
         mask = cv.medianBlur(mask, 9)
+        cv.imshow('mask', mask)
+        cv.waitKey(1)
         return mask
 
     def _watershed(self, img, mask):
@@ -50,7 +52,12 @@ class TargetFinder:
         # Now, mark the region of unknown with zero
         markers[unknown == 255] = 0
         # img = img.astype(np.int32)
-        markers = markers.astype(np.uint8)
+        # markers = markers.astype(np.uint8)
+        print(img[0,0,:])
+        print(img.shape)
+        print(type(img[0,0,0]))
+        print(markers.shape)
+        print(type(markers[0,0]))
         markers = cv.watershed(img, markers)
         img = img.copy()
         img[markers == -1] = [255, 255, 255]
@@ -111,7 +118,7 @@ class TargetFinder:
                     cv.circle(orig_img, (int(x), int(y)), int(radius),
                         (0, 255, 255), 2)
                     cv.circle(orig_img, (int(x), int(y)), 5, (0, 0, 255), -1)
-                    cv.imshow('circle', orig_img)
+                    cv.imshow('watershed', orig_img)
                     cv.waitKey(1)
                     print((x, y, radius))
                 return x, y, radius

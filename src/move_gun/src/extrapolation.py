@@ -99,8 +99,10 @@ class ExtrapolationQueue():
         data - extrapolated [x,y,z] position in 3D space. This is a regular python list.
         """
         p = self.interpolate(self.deg)  #this take the most time
+        # print(p)
         data = []
         t = np.array([time**(p.shape[0]-1-i) for i in range(p.shape[0])])
+        # print(t)
         for d in range(3):
             data.append(np.dot(p[:,d], t))
         return data
