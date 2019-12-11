@@ -94,8 +94,9 @@ def main():
     source_frame = "base"
     # target_frame = "target"
     target_frame = "target_new"
-    rate = rospy.Rate(1.0)
+    rate = rospy.Rate(0.5)
     while not rospy.is_shutdown():
+        prev_pos = None
         try:
             trans_list = []
             for _ in range(10):
@@ -106,7 +107,12 @@ def main():
             x = np.median([i.x for i in trans_list])
             y = np.median([i.y for i in trans_list])
             z = np.median([i.z for i in trans_list])
-            calc_line((x, y, z))
+
+            if prev_pos is not None:
+                diff = np.sqrt((prev_pos[0] - x)**2 + (prev_pos[1] - y)**2 + (prev_pos[2] - z)**2)
+            if prev_pos is None or diff > 5:
+                calc_line((x, y, z))
+                prev_pos = (x, y, z)
             print("----------------------")
             rate.sleep()
             
