@@ -4,10 +4,10 @@ import rospy
 import baxter_interface
 from baxter_interface import CHECK_VERSION
 
-# RELOAD_POS = 70
-# HOLD_POS = 60
-RELOAD_POS = 53
-HOLD_POS = 34
+RELOAD_POS = 70
+HOLD_POS = 60
+# RELOAD_POS = 53
+# HOLD_POS = 34
 gripper = None
 
 
