@@ -143,9 +143,11 @@ def main():
     while not rospy.is_shutdown():
         START_TIME = None
         rate = rospy.Rate(RATE_FREQ)
-        for _ in range(int(1 * RATE_FREQ)):
+        previous_time_stamp = 0
+        start_loop_time = rospy.Time().now()
+        while True:
             try:
-                trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
+                trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time(0))
                 # if previous_trans is None:
                 #     # print("no previous trans")
                 #     previous_trans = trans.transform.translation
@@ -177,17 +179,29 @@ def main():
                 #     vel = current_vel
                 # rate.sleep()
 
-                print(extra.cache)
-                extra.push(trans.header.stamp.secs, trans.transform.translation)
-                if START_TIME is None:
-                    START_TIME = trans.header.stamp.secs
-                rate.sleep()
+                # extra.push(trans.header.stamp.secs, trans.transform.translation)
+                # if START_TIME is None:
+                #     START_TIME = trans.header.stamp.secs
+                # rate.sleep()
+
+                unix_timestamp = trans.header.stamp.secs * 10**9 + trans.header.stamp.nsecs
+                if unix_timestamp > previous_time_stamp:
+                    print("got new transform")
+                    extra.push(trans.header.stamp.secs, trans.transform.translation)
+                    previous_time_stamp = unix_timestamp
+                    if START_TIME is None:
+                        START_TIME = trans.header.stamp.secs
+
+                if (rospy.Time.now() - start_loop_time).to_sec() > 1.0:
+                    print("done getting transforms")
+                    break
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
                 print("got exception")
                 rate.sleep()
 
         # calc_line(trans, vel)
-        calc_line(trans.transform.translation, 0, extra, START_TIME)
+        # calc_line(trans.transform.translation, 0, extra, START_TIME)
+        break
 
 
 if __name__ == '__main__':
