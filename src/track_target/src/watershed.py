@@ -34,6 +34,7 @@ class findTarget():
         markers = markers+1
         # Now, mark the region of unknown with zero
         markers[unknown==255] = 0
+        print(markers.dtype)
         markers = cv.watershed(self.img,markers)
         img = self.img.copy()
         img[markers == -1] = [255,255,255]
