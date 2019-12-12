@@ -5,105 +5,206 @@ from matplotlib import pyplot as plt
 
 
 
-LOWER_THRESH = (0, 54, 209)#(15,65,50)
-UPPER_THRESH = (190,83,255)
-img = cv.imread('/home/eecs106a/ros_workspaces/EE106A-AimBot/src/track_target/img/archytas_left_camera_6.png')
-
+# LOWER_THRESH = (11, 30, 109)#(15,65,50)
+# UPPER_THRESH = (49,55,154)
+# # img = cv.imread('/home/eecs106a/ros_workspaces/EE106A-AimBot/src/track_target/img/archytas_left_camera_6.png')
+# img = cv.imread('../img/archytas_left_camera_5.png')
 # img_yuv = cv.cvtColor(img, cv.COLOR_BGR2YUV)
-
+#
 # # equalize the histogram of the Y channel
-# img_yuv[:,:,0] = cv.equalizeHist(img_yuv[:,:,0])
-
+# clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(16,16))
+# img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
+# # img_yuv[:,:,0] = cv.equalizeHist(img_yuv[:,:,0])
 # # convert the YUV image back to RGB format
 # img_output = cv.cvtColor(img_yuv, cv.COLOR_YUV2BGR)
-
+# # img[:,:,0] = 0
+# # img[:,:,1] = 0
 # cv.imshow('Color input image', img)
 # cv.imshow('Histogram equalized', img_output)
+# cv.waitKey(0)
+# # raise Exception
+# # gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+# # equ = cv.equalizeHist(gray)
+# # equ = cv.inRange(equ, 120, 150)
+#
+# # cv.imshow('original', gray)
+# # cv.imshow('equalized', equ)
+# # cv.waitKey(0)
+# # equ = cv.medianBlur(img, 13)
+# # cv.imshow('blurred', equ)
+# # canny = cv.Canny(equ, 50, 200)
+# # canny = equ
+# # cv.imshow('canny', canny)
+# # cv.waitKey(0)
+# img_output = canny
+# # Copied from imutils
+# def grab_contours(cnts):
+#     # if the length the contours tuple returned by cv2.findContours
+#     # is '2' then we are using either OpenCV v2.4, v4-beta, or
+#     # v4-official
+#     if len(cnts) == 2:
+#         cnts = cnts[0]
+#
+#     # if the length of the contours tuple is '3' then we are using
+#     # either OpenCV v3, v4-pre, or v4-alpha
+#     elif len(cnts) == 3:
+#         cnts = cnts[1]
+#
+#     # otherwise OpenCV has changed their cv2.findContours return
+#     # signature yet again and I have no idea WTH is going on
+#     else:
+#         raise Exception(("Contours tuple must have length 2 or 3, "
+#             "otherwise OpenCV changed their cv2.findContours return "
+#             "signature yet again. Refer to OpenCV's documentation "
+#             "in that case"))
+#
+#     # return the actual contours array
+#     return cnts
+#
+#
+# # Detects the yellow circle on the target and returns the circle's center coords and radius
+# def detect_target_circle(img):
+#     # cv.imshow('camera', img)
+#     # cv.waitKey(1)
+#     # Convert to HSV color format and threshold on the yellow color
+#     # img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+#     # mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
+#     # mask = cv.medianBlur(mask, 9)
+#     # cv.imshow('thresholding', mask)
+#     # cv.waitKey(0)
+#
+#     # Find all the contours in the image
+#     # cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
+#     #     cv.CHAIN_APPROX_SIMPLE)
+#     cnts = cv.findContours(img.copy(), cv.RETR_EXTERNAL,
+#         cv.CHAIN_APPROX_SIMPLE)
+#     cnts = grab_contours(cnts)
+#     # cv.drawContours(img, cnts, -1, (0,255,0), 3)
+#     # cv.imshow('contours', img)
+#     # cv.waitKey(1)
+#
+#     # only proceed if at least one contour was found
+#     if len(cnts) == 0:
+#         return
+#
+#     # # find the largest contour in the mask, then use
+#     # # it to compute the minimum enclosing circle and
+#     # # centroid
+#     print(cnts)
+#     c = max(cnts, key=cv.contourArea)
+#     ((x, y), radius) = cv.minEnclosingCircle(c)
+#     # M = cv.moments(c)
+#     # center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+#
+#     # only proceed if the radius meets a minimum size
+#     if radius > 3:
+#         # draw the circle and centroid on the frame,
+#         # then update the list of tracked points
+#         cv.circle(img, (int(x), int(y)), int(radius),
+#             (0, 255, 255), 2)
+#         cv.circle(img, (int(x), int(y)), 5, (0, 0, 255), -1)
+#         cv.imshow('contour method', img)
+#         cv.waitKey(0)
+#         print((x, y, radius))
+#         return (x, y, radius)
+# circle = detect_target_circle(img_output)
 
-gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-equ = cv.equalizeHist(gray)
-# equ = cv.inRange(equ, 120, 150)
 
-cv.imshow('original', gray)
-cv.imshow('equalized', equ)
-cv.waitKey(0)
-equ = cv.medianBlur(equ, 13)
-cv.imshow('blurred', equ)
-canny = cv.Canny(equ, 50, 200)
-cv.imshow('canny', canny)
-cv.waitKey(0)
-img_output = canny
-# Copied from imutils
-def grab_contours(cnts):
-    # if the length the contours tuple returned by cv2.findContours
-    # is '2' then we are using either OpenCV v2.4, v4-beta, or
-    # v4-official
-    if len(cnts) == 2:
-        cnts = cnts[0]
+import cv2
+import argparse
+from operator import xor
 
-    # if the length of the contours tuple is '3' then we are using
-    # either OpenCV v3, v4-pre, or v4-alpha
-    elif len(cnts) == 3:
-        cnts = cnts[1]
+def callback(arg):
+    pass
 
-    # otherwise OpenCV has changed their cv2.findContours return
-    # signature yet again and I have no idea WTH is going on
-    else:
-        raise Exception(("Contours tuple must have length 2 or 3, "
-            "otherwise OpenCV changed their cv2.findContours return "
-            "signature yet again. Refer to OpenCV's documentation "
-            "in that case"))
+def threshold(range_filter, frame_to_thresh):
+    v1_min, v2_min, v3_min, v1_max, v2_max, v3_max = get_trackbar_values(range_filter)
 
-    # return the actual contours array
-    return cnts
+    thresh = cv2.inRange(frame_to_thresh, (v1_min, v2_min, v3_min), (v1_max, v2_max, v3_max))
+    thresh = cv2.medianBlur(thresh, 9)
 
+    cv2.imshow("Original", cv2.cvtColor(frame_to_thresh, cv2.COLOR_HSV2BGR))
+    cv2.imshow("thresholded image", thresh)
+    # cv2.imshow("Thresh", thresh)
+    # cv2.waitKey(1)
 
-# Detects the yellow circle on the target and returns the circle's center coords and radius
-def detect_target_circle(img):
-    # cv.imshow('camera', img)
-    # cv.waitKey(1)
-    # Convert to HSV color format and threshold on the yellow color
-    # img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-    # mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
-    # mask = cv.medianBlur(mask, 9)
-    # cv.imshow('thresholding', mask)
-    # cv.waitKey(0)
-
-    # Find all the contours in the image
-    # cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
-    #     cv.CHAIN_APPROX_SIMPLE)
-    cnts = cv.findContours(img.copy(), cv.RETR_EXTERNAL,
-        cv.CHAIN_APPROX_SIMPLE)
-    cnts = grab_contours(cnts)
-    # cv.drawContours(img, cnts, -1, (0,255,0), 3)
-    # cv.imshow('contours', img)
-    # cv.waitKey(1)
-
-    # only proceed if at least one contour was found
-    if len(cnts) == 0:
+    if cv2.waitKey(1) & 0xFF is ord('q'):
         return
 
-    # # find the largest contour in the mask, then use
-    # # it to compute the minimum enclosing circle and
-    # # centroid
-    print(cnts)
-    c = max(cnts, key=cv.contourArea)
-    ((x, y), radius) = cv.minEnclosingCircle(c)
-    # M = cv.moments(c)
-    # center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
-    # only proceed if the radius meets a minimum size
-    if radius > 3:
-        # draw the circle and centroid on the frame,
-        # then update the list of tracked points
-        cv.circle(img, (int(x), int(y)), int(radius),
-            (0, 255, 255), 2)
-        cv.circle(img, (int(x), int(y)), 5, (0, 0, 255), -1)
-        cv.imshow('contour method', img)
-        cv.waitKey(0)
-        print((x, y, radius))
-        return (x, y, radius)
-circle = detect_target_circle(img_output)
+def setup_trackbars(range_filter):
+    cv2.namedWindow("Trackbars", 0)
+
+    for i in ["MIN", "MAX"]:
+        v = 0 if i == "MIN" else 255
+
+        for j in range_filter:
+            cv2.createTrackbar("%s_%s" % (j, i), "Trackbars", v, 255, callback)
+
+
+def get_arguments():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-f', '--filter', required=True,
+                    help='Range filter. RGB or HSV')
+    ap.add_argument('-p', '--preview', required=False,
+                    help='Show a preview of the image after applying the mask',
+                    action='store_true')
+    args = vars(ap.parse_args())
+    if not args['filter'].upper() in ['RGB', 'HSV']:
+        ap.error("Please speciy a correct filter.")
+
+    return args
+
+
+def get_trackbar_values(range_filter):
+    values = []
+
+    for i in ["MIN", "MAX"]:
+        for j in range_filter:
+            v = cv2.getTrackbarPos("%s_%s" % (j, i), "Trackbars")
+            values.append(v)
+
+    return values
+
+
+def main():
+    args = get_arguments()
+
+    range_filter = args['filter'].upper()
+
+    image = cv2.imread('../img/archytas_left_camera_2.png')
+
+
+
+    img_yuv = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
+
+    # equalize the histogram of the Y channel
+    # img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+    clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(16,16))
+    img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
+    # convert the YUV image back to RGB format
+    image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+
+
+
+    if range_filter == 'RGB':
+        frame_to_thresh = image.copy()
+    else:
+        frame_to_thresh = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    # else:
+    #     camera = cv2.VideoCapture(0)
+
+    setup_trackbars(range_filter)
+
+    while True:
+        threshold(range_filter, frame_to_thresh)
+
+
+if __name__ == '__main__':
+    main()
+
+
+
 
 # img = cv.imread('/home/eecs106a/ros_workspaces/EE106A-AimBot/src/track_target/img/archytas_left_camera_5.png')
 # gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -419,7 +520,7 @@ circle = detect_target_circle(img_output)
 #         # cv.imshow('thresholding', m)
 #         # cv.waitKey(0)
 
-#         # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+#         # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 #         blur = cv2.medianBlur(mask, 17)
 #         # print(blur.shape)
 #         thresh = blur#cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,27,6)
@@ -493,7 +594,7 @@ circle = detect_target_circle(img_output)
 # #         M = cv2.moments(c)
 # #         cX = int(M["m10"] / M["m00"])
 # #         cY = int(M["m01"] / M["m00"])
-# #         cv2.circle(image, (cX, cY), 20, (36, 255, 12), 2) 
+# #         cv2.circle(image, (cX, cY), 20, (36, 255, 12), 2)
 # #         x,y,w,h = cv2.boundingRect(c)
 # #         cv2.putText(image, 'Radius: {}'.format(w/2), (10,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (36,255,12), 2)
 # #         break

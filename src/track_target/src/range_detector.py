@@ -7,12 +7,12 @@
 # or
 # (python) range-detector --filter HSV --webcam
 
-import rospy
+# import rospy
 import cv2
 import argparse
 from operator import xor
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
+# from sensor_msgs.msg import Image
+# from cv_bridge import CvBridge, CvBridgeError
 
 
 def callback(arg):
@@ -98,12 +98,14 @@ def main():
 
 
 
-        img_yuv = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
-
-        # equalize the histogram of the Y channel
-        img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
-        # convert the YUV image back to RGB format
-        image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+        # img_yuv = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
+        #
+        # # equalize the histogram of the Y channel
+        # # img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+        # clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(16,16))
+        # img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
+        # # convert the YUV image back to RGB format
+        # image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
 
 
 
