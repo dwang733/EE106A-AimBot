@@ -9,14 +9,18 @@ import tf2_ros
 from geometry_msgs.msg import TransformStamped
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+from watershed import TargetFinder
 
 # Threshold on yellow
+# LOWER_THRESH = (15, 65, 50)
+# UPPER_THRESH = (65, 255, 150)
 # LOWER_THRESH = (15,55,50)
-LOWER_THRESH = (15, 65, 50)
-# UPPER_THRESH = (70,255,255)
-UPPER_THRESH = (65, 255, 150)
+# UPPER_THRESH = (70,255,100)
+LOWER_THRESH = (15,75,60)
+UPPER_THRESH = (70,255,200)
 # CAMERA_HEIGHT = 800
 # CAMERA_WIDTH = 1280
+target_finder = TargetFinder(LOWER_THRESH, UPPER_THRESH)
 
 # Diameter (in m) of the circle detected by the algorithm
 CIRCLE_DIAMETER = 0.048
@@ -92,7 +96,7 @@ def detect_target_circle(img):
         cv.circle(img, (int(x), int(y)), int(radius),
             (0, 255, 255), 2)
         cv.circle(img, (int(x), int(y)), 5, (0, 0, 255), -1)
-        cv.imshow('circle', img)
+        cv.imshow('contour method', img)
         cv.waitKey(1)
         print((x, y, radius))
         return (x, y, radius)
@@ -205,11 +209,12 @@ def calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH):
 
 def callback(msg):
     try:
-        img = bridge.imgmsg_to_cv2(msg, "passthrough")
+        img = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         # img = img[:, 200:-200, :]
         CAMERA_HEIGHT, CAMERA_WIDTH, _ = img.shape
 
         circle = detect_target_circle(img)
+        # circle = target_finder.detect_target_circle(img)
         if circle is not None:
             calc_target_position(circle, CAMERA_HEIGHT, CAMERA_WIDTH)
     except CvBridgeError, e:

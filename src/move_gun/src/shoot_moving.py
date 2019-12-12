@@ -13,10 +13,11 @@ from baxter_interface import Limb
 import traceback
 import shoot
 from extrapolation import ExtrapolationQueue
+from datetime import datetime
 
 planner = PathPlanner("right_arm")
 RATE_FREQ = 4.0
-TIME_OFFSET = 1.0
+TIME_OFFSET = 2.5
 
 
 def create_goal_pose(trans):
@@ -89,36 +90,42 @@ def calc_line(trans, vel, extra, START_TIME):
 
         if len(plan.joint_trajectory.points) > 0:
             print("num points in traj: {}".format(len(plan.joint_trajectory.points)))
-        time_to_execute = plan.joint_trajectory.points[-1].time_from_start.to_sec()
-        time_to_execute += TIME_OFFSET
-        print(time_to_execute)
+            time_to_execute = plan.joint_trajectory.points[-1].time_from_start.to_sec()
+            print(time_to_execute)
 
-        predict_trans = Vector3()
-        # predict_trans.x = x_target + vel.x * time_to_execute
-        # predict_trans.y = y_target + vel.y * time_to_execute
-        # predict_trans.z = z_target + vel.z * time_to_execute
-        # print("predict trans: {}".format(predict_trans))
-        time = (rospy.Time().now() + rospy.Duration(337)).secs + TIME_OFFSET
-        predict_trans.x, predict_trans.y, predict_trans.z = extra.extrapolate(time)
+            predict_trans = Vector3()
+            # predict_trans.x = x_target + vel.x * time_to_execute
+            # predict_trans.y = y_target + vel.y * time_to_execute
+            # predict_trans.z = z_target + vel.z * time_to_execute
+            # print("predict trans: {}".format(predict_trans))
+            time = rospy.Time().now() + rospy.Duration(337)
+            time = (time.secs + time_to_execute + TIME_OFFSET) * 10**9 + time.nsecs
+            predict_trans.x, predict_trans.y, predict_trans.z = extra.extrapolate(time)
+            print("{},{},{}".format(predict_trans.x, predict_trans.y, predict_trans.z))
 
-        predict_goal = create_goal_pose(predict_trans)
-        plan = planner.plan_to_pose(predict_goal, [])
-        print("new plan")
-        print("--------------------------------------")
+            predict_goal = create_goal_pose(predict_trans)
+            plan = planner.plan_to_pose(predict_goal, [])
+            print("new plan")
+            print("--------------------------------------")
+            if len(plan.joint_trajectory.points) == 0:
+                raise Exception("No motion plan found for predicted position")
 
-        if not planner.execute_plan(plan):
-            raise Exception("Execution failed")
+            while not planner.execute_plan(plan):
+                continue
+            # if not planner.execute_plan(plan):
+            #     raise Exception("Execution failed")
 
-        print("shooting!")
-        # shoot.shoot()
-        # raw_input("Press <Enter> when done reloading: ")
-        # shoot.hold()
+            print("shooting!")
+            shoot.shoot()
+            raw_input("Press <Enter> when done reloading: ")
+            shoot.hold()
 
         print("Program done!")
-        # exit(0)
+        exit(0)
     except Exception as e:
         print(e)
         traceback.print_exc()
+        exit(0)
 
 def main():
     rospy.init_node('move_arm')
@@ -137,15 +144,17 @@ def main():
     previous_time_stamp = None
     vel = None
 
-    extra = ExtrapolationQueue(8)
+    extra = ExtrapolationQueue(6, deg=2)
 
     raw_input("Press <Enter> to move the right arm: ")
     while not rospy.is_shutdown():
         START_TIME = None
         rate = rospy.Rate(RATE_FREQ)
-        for _ in range(int(1 * RATE_FREQ)):
+        previous_time_stamp = 0
+        start_loop_time = rospy.Time().now()
+        while True:
             try:
-                trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time())
+                trans = tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time(0))
                 # if previous_trans is None:
                 #     # print("no previous trans")
                 #     previous_trans = trans.transform.translation
@@ -177,17 +186,31 @@ def main():
                 #     vel = current_vel
                 # rate.sleep()
 
-                print(extra.cache)
-                extra.push(trans.header.stamp.secs, trans.transform.translation)
-                if START_TIME is None:
-                    START_TIME = trans.header.stamp.secs
-                rate.sleep()
+                # extra.push(trans.header.stamp.secs, trans.transform.translation)
+                # if START_TIME is None:
+                #     START_TIME = trans.header.stamp.secs
+                # rate.sleep()
+
+                unix_timestamp = trans.header.stamp.secs * 10**9 + trans.header.stamp.nsecs
+                if unix_timestamp > previous_time_stamp:
+                    print(trans.header.stamp.nsecs / 10**6)
+                    print(trans.transform.translation)
+                    print("got new transform")
+                    extra.push(unix_timestamp, trans.transform.translation)
+                    previous_time_stamp = unix_timestamp
+                    if START_TIME is None:
+                        START_TIME = trans.header.stamp.secs
+
+                if (rospy.Time.now() - start_loop_time).to_sec() > 0.5:
+                    print("done getting transforms")
+                    break
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
                 print("got exception")
                 rate.sleep()
 
         # calc_line(trans, vel)
         calc_line(trans.transform.translation, 0, extra, START_TIME)
+        print('end of while loop')
 
 
 if __name__ == '__main__':
