@@ -7,7 +7,7 @@ from baxter_interface import CHECK_VERSION
 # RELOAD_POS = 70
 # HOLD_POS = 60
 RELOAD_POS = 60
-HOLD_POS = 34
+HOLD_POS = 45
 gripper = None
 
 

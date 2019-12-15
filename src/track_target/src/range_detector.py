@@ -24,6 +24,9 @@ def camera_callback(msg, args):
     bridge = CvBridge()
     try:
         img = bridge.imgmsg_to_cv2(msg, "passthrough")
+        # img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+        # img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+        # img = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         threshold(range_filter, img_hsv)
     except CvBridgeError, e:

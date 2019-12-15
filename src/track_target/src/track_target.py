@@ -18,6 +18,10 @@ from watershed import TargetFinder
 # UPPER_THRESH = (70,255,100)
 LOWER_THRESH = (15,75,60)
 UPPER_THRESH = (70,255,200)
+
+# Threshold on green
+# LOWER_THRESH = (60,28,0)
+# UPPER_THRESH = (81,255,255)
 # CAMERA_HEIGHT = 800
 # CAMERA_WIDTH = 1280
 target_finder = TargetFinder(LOWER_THRESH, UPPER_THRESH)
