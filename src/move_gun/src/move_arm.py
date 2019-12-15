@@ -65,12 +65,12 @@ def calc_line(trans):
 
             # Might have to edit this . . . 
             plan = planner.plan_to_pose(goal_1, [])
-            if len(plan.joint_trajectory.points) > 0:
-                print(plan.joint_trajectory.points[-1].time_from_start.to_sec())
+            if len(plan.joint_trajectory.points) == 0:
+                raise Exception("No motion plan found for predicted position")
 
             raw_input("Press <Enter> to move the right arm to goal pose 1: ")
-            if not planner.execute_plan(plan):
-                raise Exception("Execution failed")
+            while not planner.execute_plan(plan):
+                continue
 
             raw_input("Press <Enter> to shoot: ")
             shoot.shoot()
