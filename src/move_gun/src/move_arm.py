@@ -19,9 +19,6 @@ planner = PathPlanner("right_arm")
 
 def calc_line(trans):
     print("moving arm")
-    # x_target = trans.transform.translation.x
-    # y_target = trans.transform.translation.y
-    # z_target = trans.transform.translation.z
     x_target, y_target, z_target = trans
     print("{},{},{}".format(x_target, y_target, z_target))
 
@@ -68,7 +65,7 @@ def calc_line(trans):
             if len(plan.joint_trajectory.points) == 0:
                 raise Exception("No motion plan found for predicted position")
 
-            raw_input("Press <Enter> to move the right arm to goal pose 1: ")
+            # raw_input("Press <Enter> to move the right arm to goal pose 1: ")
             while not planner.execute_plan(plan):
                 continue
 
@@ -92,7 +89,6 @@ def main():
     tfBuffer = tf2_ros.Buffer()
     tfListener = tf2_ros.TransformListener(tfBuffer)
     source_frame = "base"
-    # target_frame = "target"
     target_frame = "target_new"
     rate = rospy.Rate(0.5)
     while not rospy.is_shutdown():
@@ -116,7 +112,6 @@ def main():
             #     prev_pos = (x, y, z)
             # print("----------------------")
             # rate.sleep()
-            
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
             rate.sleep()
             continue
