@@ -1,4 +1,12 @@
 <launch>
+  <arg name="right_electric_gripper" default="true"/>
+  <arg name="left_electric_gripper" default="false"/>
+
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+    <arg name="left_electric_gripper" value="$(arg left_electric_gripper)"/>
+    <arg name="right_electric_gripper" value="$(arg right_electric_gripper)"/>
+  </include>
+
   <node name="joint_trajectory_action_server" pkg="baxter_interface" type="joint_trajectory_action_server.py" />
 
   <include file="$(find baxter_moveit_config)/launch/move_group.launch" >

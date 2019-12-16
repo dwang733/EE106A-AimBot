@@ -12,18 +12,12 @@ from cv_bridge import CvBridge, CvBridgeError
 from watershed import TargetFinder
 
 # Threshold on yellow
-# LOWER_THRESH = (15, 65, 50)
-# UPPER_THRESH = (65, 255, 150)
-# LOWER_THRESH = (15,55,50)
-# UPPER_THRESH = (70,255,100)
-LOWER_THRESH = (15,75,60)
-UPPER_THRESH = (70,255,200)
+LOWER_THRESH = (120,30,70)
+UPPER_THRESH = (170,120,200)
 
 # Threshold on green
 # LOWER_THRESH = (60,28,0)
 # UPPER_THRESH = (81,255,255)
-# CAMERA_HEIGHT = 800
-# CAMERA_WIDTH = 1280
 target_finder = TargetFinder(LOWER_THRESH, UPPER_THRESH)
 
 # Diameter (in m) of the circle detected by the algorithm
@@ -35,7 +29,6 @@ TARGET_FULL_DIST = 0.118
 # Bridge used to convert camera image to OpenCV format
 bridge = CvBridge()
 
-base_camera_trans = TransformStamped()
 
 # Copied from imutils
 def grab_contours(cnts):
@@ -64,10 +57,9 @@ def grab_contours(cnts):
 
 # Detects the yellow circle on the target and returns the circle's center coords and radius
 def detect_target_circle(img):
-    # cv.imshow('camera', img)
-    # cv.waitKey(1)
     # Convert to HSV color format and threshold on the yellow color
     img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    img_hsv[:,:,0] = np.mod(img_hsv[:,:,0] + 100, 255)
     mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
     mask = cv.medianBlur(mask, 9)
     cv.imshow('thresholding', mask)
@@ -232,16 +224,6 @@ def main():
 
     tfBuffer = tf2_ros.Buffer()
     tfListener = tf2_ros.TransformListener(tfBuffer)
-
-    # rate = rospy.Rate(10.0)
-    # while not rospy.is_shutdown():
-    #     try:
-    #         base_camera_trans = tfBuffer.lookup_transform("left_hand_camera_axis", "base", rospy.Time())
-    #         break
-    #     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-    #         print(e)
-    #         rate.sleep()
-    #         continue
 
     rospy.spin()
 
