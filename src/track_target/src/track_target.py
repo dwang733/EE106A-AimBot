@@ -11,9 +11,17 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from watershed import TargetFinder
 
-# Threshold on yellow
-LOWER_THRESH = (120,30,70)
-UPPER_THRESH = (170,120,200)
+# Threshold on YELLOW
+#LOWER_THRESH = (0,58,53) #(120,30,70)
+#UPPER_THRESH = (87,102,102) #(170,120,200)
+
+#Threshold on YELLOW LARGE
+LOWER_THRESH = (13,57,73) #(120,30,70)
+UPPER_THRESH = (87,117,255) #(170,120,200)
+
+# Threshold on BLUE. Commented out is YELLOW
+#LOWER_THRESH = (36, 50, 9)#(150,45,5)#(45,85,72)
+#UPPER_THRESH = (118, 105, 29)#(206,79,70)#(177,242,251)
 
 # Threshold on green
 # LOWER_THRESH = (60,28,0)
@@ -21,7 +29,10 @@ UPPER_THRESH = (170,120,200)
 target_finder = TargetFinder(LOWER_THRESH, UPPER_THRESH)
 
 # Diameter (in m) of the circle detected by the algorithm
-CIRCLE_DIAMETER = 0.048
+# YELLOW Diameter
+CIRCLE_DIAMETER = 0.210
+# BLUE Diameter
+#CIRCLE_DIAMETER = 0.152
 # Diameter (in m) of the target
 TARGET_DIAMETER = 0.250
 # Distance (in m) from camera which causes target to be the height of the camera image
@@ -59,7 +70,7 @@ def grab_contours(cnts):
 def detect_target_circle(img):
     # Convert to HSV color format and threshold on the yellow color
     img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-    img_hsv[:,:,0] = np.mod(img_hsv[:,:,0] + 100, 255)
+    #img_hsv[:,:,0] = np.mod(img_hsv[:,:,0] + 100, 255)
     mask = cv.inRange(img_hsv, LOWER_THRESH, UPPER_THRESH)
     mask = cv.medianBlur(mask, 9)
     cv.imshow('thresholding', mask)

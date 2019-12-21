@@ -31,12 +31,12 @@ def calc_line(trans):
                 print("target in range")
                 # x, y, and z position
                 goal_1.pose.position.x = 0.5
-                goal_1.pose.position.y = y_target
+                goal_1.pose.position.y = y_target - 0.125
                 goal_1.pose.position.z = z_target
                 
                 # Orientation as a quaternion (must be normalized to one)
                 # q = quaternion_from_euler(2.940, -0.340, -1.65)
-                q = quaternion_from_euler(3.000, -0.144, -1.65)
+                q = quaternion_from_euler(3.100, -0.150, -1.623)
                 goal_1.pose.orientation.x = q[0]
                 goal_1.pose.orientation.y = q[1]
                 goal_1.pose.orientation.z = q[2]
@@ -53,8 +53,8 @@ def calc_line(trans):
                 # theta_roll = 2.940 + np.arctan((z_'target - goal_1.pose.position.z) / (x_target - goal_1.pose.position.x))
                 # if theta_roll > np.pi:
                 #     theta_roll -= 2 * np.pi
-                theta_roll = 2.940
-                q = quaternion_from_euler(theta_roll, -0.340, theta_yaw)
+                theta_roll = 3.100
+                q = quaternion_from_euler(theta_roll, -0.150, theta_yaw)
                 goal_1.pose.orientation.x = q[0]
                 goal_1.pose.orientation.y = q[1]
                 goal_1.pose.orientation.z = q[2]

@@ -67,7 +67,7 @@ def create_goal_pose(trans):
     
     # Orientation as a quaternion (must be normalized to one)
     # q = quaternion_from_euler(2.940, -0.340, -1.65)
-    q = quaternion_from_euler(3.000, -0.144, -1.65)
+    q = quaternion_from_euler(3.100, -0.150, -1.623)
     goal_1.pose.orientation.x = q[0]
     goal_1.pose.orientation.y = q[1]
     goal_1.pose.orientation.z = q[2]
